@@ -1,0 +1,24 @@
+# 任务卡索引
+
+每张任务卡 = 一个新会话窗口的完整上下文。**只读对应一张 + `CLAUDE.md` 即可开干。**
+
+| Day | 卡片 | 主题 | 状态 |
+|---|---|---|---|
+| D0 | — | 脚手架 + 文档（已完成） | ✅ |
+| D1 | [D1-foundation.md](D1-foundation.md) | Supabase 接入 + shadcn 装齐 + HR 密码登录 | ⏳ |
+| D2 | [D2-hr-backend.md](D2-hr-backend.md) | 岗位 CRUD + 筛选标准编辑器 | ⏳ |
+| D3 | [D3-candidate-portal.md](D3-candidate-portal.md) | 公开岗位列表/详情 + 投递表单 | ⏳ |
+| D4 | [D4-ai-scoring.md](D4-ai-scoring.md) | 简历解析 + AI 评分流水线 | ⏳ |
+| D5 | [D5-dashboard-feishu.md](D5-dashboard-feishu.md) | HR 候选人面板 + 飞书推送 | ⏳ |
+| D6 | [D6-polish.md](D6-polish.md) | 打磨：空状态/loading/移动端/亮点 | ⏳ |
+| D7 | [D7-deploy.md](D7-deploy.md) | Vercel 部署 + 录屏 + 提交文档 | ⏳ |
+
+## 任务卡格式约定
+
+每张卡包含 6 个 section：
+1. **Status / Goal** — 一句话目标
+2. **Inputs** — 必读的依赖文件清单
+3. **Deliverables** — 要新增/修改的文件
+4. **Steps** — 有序的实施步骤
+5. **Acceptance** — 完成的客观验收标准
+6. **Out of scope** — 明确不要做的事
