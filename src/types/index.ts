@@ -1,6 +1,8 @@
 // ============================================================
-// Domain types — single source of truth.
-// Mirrors docs/data-model.sql. Update both when schema changes.
+// Domain types — value objects for jsonb columns.
+// Row types live in src/lib/db/schema.ts (Drizzle inferred).
+// 这里只放 *json 字段* 的形状（criteria / parsed_resume / score 等），
+// 因为 schema 用 .$type<T>() 引用这些类型。
 // ============================================================
 
 // ---------- Job & screening criteria ----------
@@ -34,19 +36,9 @@ export interface ScreeningCriteria {
   custom: { name: string; weight: number; description: string }[];
 }
 
-export interface Job {
-  id: string;
-  title: string;
-  department: string;
-  location: string;
-  description: string; // markdown
-  criteria: ScreeningCriteria;
-  /** AI score >= threshold → push to feishu */
-  push_threshold: number; // 0-100, default 80
-  status: JobStatus;
-  created_at: string;
-  updated_at: string;
-}
+// 注意：完整的 Job / Application / Candidate row 类型从 db/schema.ts 推断：
+//   import type { Job, Application, Candidate } from "@/lib/db/schema";
+// 本文件只保留 jsonb 列的内嵌结构定义。
 
 // ---------- Application & parsed resume ----------
 
@@ -93,31 +85,4 @@ export interface ScoreResult {
   reasoning: string; // 1-2 sentence summary, shown in HR list
 }
 
-export interface Application {
-  id: string;
-  job_id: string;
-  /** Supabase auth.users.id — nullable only for legacy/migrated rows */
-  candidate_user_id: string | null;
-  candidate_name: string;
-  candidate_email: string;
-  candidate_phone: string;
-  resume_file_path: string; // supabase storage key
-  /** Autofill is done BEFORE application row is created (see user-journeys.md
-   *  Step ⑤). So parsed_resume is always set by submit-time. */
-  parsed_resume: ParsedResume | null;
-  score: ScoreResult | null;
-  status: ApplicationStatus;
-  pushed_to_feishu_at: string | null;
-  created_at: string;
-}
-
-// ---------- Feishu ----------
-
-export interface FeishuPushLog {
-  id: string;
-  application_id: string;
-  job_id: string;
-  ok: boolean;
-  response: string;
-  created_at: string;
-}
+// Application / FeishuLog row 类型从 db/schema.ts 推断。

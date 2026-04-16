@@ -5,7 +5,7 @@
 ## Goal
 1. **移除 D3 的 mock**：`/api/resume/parse` 用真实 LLM 跑通
 2. 实现 `/api/score/[id]`：后台异步评分，写回 `applications.score`
-3. 投递一份真实简历 → 2 分钟内 HR 在 Supabase 看到完整 parsed_resume + score
+3. 投递一份真实简历 → 2 分钟内 HR 在 TiDB 看到完整 parsed_resume + score
 
 ## Inputs (必读)
 - `CLAUDE.md` §4 两阶段流水线
@@ -53,7 +53,7 @@
 6. 写 `scorer.ts`：同上 + clamp 逻辑
 7. 替换 `/api/resume/parse` 里的 mock
 8. 写 `/api/score/[id]`：带错误分支（任何 step 失败 → status=failed + fail_reason）
-9. 端到端：真机投递一份简历，观察 Supabase 里 parsed_resume + score 都是合法 JSON
+9. 端到端：真机投递一份简历，观察 TiDB 里 parsed_resume + score 都是合法 JSON
 
 ## Acceptance
 - [ ] D3 投递流程现在用真实 AI 解析填表（不再 mock）

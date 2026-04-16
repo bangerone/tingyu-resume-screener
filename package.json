@@ -6,22 +6,36 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "db:generate": "drizzle-kit generate",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
     "next": "^14.2.5",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "@supabase/supabase-js": "^2.45.0",
-    "@supabase/ssr": "^0.5.0",
+
+    "drizzle-orm": "^0.33.0",
+    "mysql2": "^3.11.0",
+
+    "jose": "^5.6.3",
+
+    "resend": "^3.5.0",
+
+    "cos-nodejs-sdk-v5": "^2.14.5",
+
+    "openai": "^4.55.0",
+    "zod": "^3.23.8",
+
+    "react-hook-form": "^7.52.1",
+    "@hookform/resolvers": "^3.9.0",
+
     "tailwind-merge": "^2.4.0",
     "clsx": "^2.1.1",
     "class-variance-authority": "^0.7.0",
     "lucide-react": "^0.424.0",
-    "openai": "^4.55.0",
-    "zod": "^3.23.8",
-    "react-hook-form": "^7.52.1",
-    "@hookform/resolvers": "^3.9.0",
+
     "pdf-parse": "^1.1.1",
     "mammoth": "^1.8.0"
   },
@@ -30,6 +44,9 @@
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "@types/pdf-parse": "^1.1.4",
+
+    "drizzle-kit": "^0.24.0",
+
     "typescript": "^5.5.3",
     "tailwindcss": "^3.4.6",
     "postcss": "^8.4.39",

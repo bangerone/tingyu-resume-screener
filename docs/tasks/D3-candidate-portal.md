@@ -20,10 +20,10 @@
 - `src/app/jobs/[id]/page.tsx` — 岗位详情 + 底部「立即投递」大按钮
 - `src/features/jobs/job-card.tsx` — 卡片组件
 
-### 候选人登录（Magic Link）
-- `src/features/auth/magic-link-form.tsx` — 邮箱输入框 + 提交
-- `src/features/auth/use-session.ts` — 客户端 hook：`useSession()` 返回当前候选人
-- `src/app/auth/callback/route.ts` — 已在 D1 实现
+### 候选人登录（邮箱验证码）
+- `src/features/auth/email-code-form.tsx` — 两段式：①邮箱输入 ②6 格验证码 + 60s 倒计时重发
+- `src/features/auth/use-session.ts` — 客户端 hook：`useSession()` 通过 `/api/auth/candidate/me` 返回当前候选人
+- API 已在 D1 实现：request-code / verify-code / me
 
 ### 投递流程（核心）
 - `src/app/jobs/[id]/apply/page.tsx` — 三步式 stepper
@@ -60,7 +60,7 @@
 7. 提交前 dedupe 检查：GET `/api/applications/check?job_id=` → 若已投 30d 内 → 弹窗
 8. 提交：POST `/api/applications`，成功后 `router.push('/applied/' + id)`
 9. /applied/[id]：展示「已收到」大对勾动画 + 两个按钮
-10. /my-applications：服务端 RSC 用 `createServerClient` + `supabase.auth.getUser()` 查 applications
+10. /my-applications：服务端 RSC 用 `getCandidateSession()` 拿 user → `db.select().from(applications).where(eq(applications.candidateId, session.sub))`
 
 ## Acceptance（端到端演示脚本）
 - [ ] 匿名用户访问 `/jobs` 看到 sample job

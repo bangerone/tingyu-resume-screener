@@ -7,7 +7,7 @@
 | 角色 | 入口 | 账号体系 |
 |---|---|---|
 | **HR**（内部） | 通过 `/admin/login` 直接访问（**不在首页导出**） | 单一共享密码（env 配置） |
-| **候选人**（C 端） | 访问公开首页 `/` → 浏览岗位 → 点投递 | Supabase Auth · **Magic Link**（邮箱一次性登录） |
+| **候选人**（C 端） | 访问公开首页 `/` → 浏览岗位 → 点投递 | **邮箱 6 位验证码 + JWT cookie**（自实现，dev 控制台打印 / prod Resend 发邮件） |
 
 ---
 
@@ -21,19 +21,20 @@
      └─ /jobs/[id]：JD + 任职要求 + 公司说明 + 底部「立即投递」大按钮
 ③ 点「立即投递」
      ├─ 未登录 → /jobs/[id]/apply
-     │    └─ 第一屏：仅一个输入框「输入邮箱获取登录链接」
-     │    └─ 邮箱提交 → Supabase Auth 发 magic link
-     │    └─ 候选人在邮箱点链接 → 回跳 /jobs/[id]/apply?token=... → 建立 session
+     │    └─ Step 0a：仅一个输入框「输入邮箱」+ 「获取验证码」按钮
+     │    └─ 提交 → server 生成 6 位 code、hash 存 DB、发送邮件（dev 控制台打印）
+     │    └─ Step 0b：6 格验证码输入框 + 「重新发送」（60s 倒计时）
+     │    └─ 提交 → server 比对 hash + 检查未消费/未过期
+     │    └─ 通过 → upsert candidates row + set JWT cookie → 进入 Step 1
      │
      └─ 已登录 → 直接 /jobs/[id]/apply 进入 step 1
 ④ Apply Step 1 — 上传简历
      └─ 拖拽区 / 点击上传（pdf/docx，≤10MB）
+     └─ 客户端 GET /api/resume/sts → 拿临时凭证 → 用 cos-js-sdk 直传 COS
      └─ 上传后自动进入 Step 2
 ⑤ Apply Step 2 — AI 解析中... (loading 5-15s)
-     └─ 上传的文件：
-        a) 存到 Supabase Storage `resumes/<user-id>/<timestamp>.pdf`
-        b) 提取纯文本
-        c) 调 LLM 结构化 → 得到 ParsedResume JSON
+     └─ POST /api/resume/parse { fileKey }
+        → server: COS download → text extract → LLM 结构化 → 返回 ParsedResume
      └─ 解析完成自动进入 Step 3
 ⑥ Apply Step 3 — 检查并完善表单
      └─ 表单字段已被 AI 自动填充：

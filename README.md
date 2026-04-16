@@ -24,11 +24,13 @@ npm run dev
 | 文档 | 内容 |
 |---|---|
 | [CLAUDE.md](CLAUDE.md) | **项目宪法** — 架构、目录、约束、流程。每次开新会话先读它 |
+| [docs/user-journeys.md](docs/user-journeys.md) | HR 和候选人完整旅程（产品体验权威） |
 | [docs/architecture.md](docs/architecture.md) | 系统架构图、模块边界、数据流 |
-| [docs/data-model.sql](docs/data-model.sql) | Supabase 建表 SQL，可直接粘贴到 SQL editor |
-| [docs/prompt-engineering.md](docs/prompt-engineering.md) | AI 解析 + 评分的 prompt 设计与示例 |
-| [docs/feishu-integration.md](docs/feishu-integration.md) | 飞书机器人接入步骤 + 卡片 schema |
-| [docs/tasks/](docs/tasks/) | 7 张独立任务卡（D1-D7），每张可在新窗口里独立完成 |
+| `src/lib/db/schema.ts` | **Drizzle schema（数据模型 SoT）** |
+| [docs/prompt-engineering.md](docs/prompt-engineering.md) | AI 解析 + 评分的 prompt 设计 |
+| [docs/feishu-integration.md](docs/feishu-integration.md) | 飞书机器人接入步骤 |
+| [docs/deployment.md](docs/deployment.md) | 腾讯云 EdgeOne Pages 部署指南 |
+| [docs/tasks/](docs/tasks/) | 7 张独立任务卡（D1-D7），每张可在新窗口独立完成 |
 
 ## 提交物清单（一周后交付）
 
