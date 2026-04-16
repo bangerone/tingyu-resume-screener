@@ -1,12 +1,14 @@
 # 庭宇 · 智能简历筛选系统 — 项目宪法
 
-> 这份文件是新会话上下文的**唯一入口**。任何继续开发的窗口，先读它，再读 `docs/tasks/Dx-*.md` 当天任务卡。
+> 这份文件是新会话上下文的**唯一入口**。任何继续开发的窗口，先读它，再读 [docs/user-journeys.md](docs/user-journeys.md) 确认产品体验，再读 `docs/tasks/Dx-*.md` 当天任务卡。
 
 ## 0. 任务背景（一句话）
 
 为庭宇科技面试作业实现一个 vibe-coding 的简历筛选 SaaS：
-**HR 建岗位 + 筛选标准 → 候选人投递 → AI 解析+评分 → 高分自动推送飞书**。
+**HR 建岗 + 筛选标准 → 候选人 Magic Link 登录 → 上传简历 → AI 自动填表 → 投递 → 后台异步评分 → 高分自动推送飞书**。
 限时一周。提交物 = 设计要点文档 + 在线 demo + 录屏。
+
+**产品卖点（差异化）**：AI 自动解析简历填写申请表，候选人不用重复填字段。
 
 ## 1. Tech Stack
 
@@ -14,7 +16,9 @@
 |---|---|---|
 | Framework | Next.js 14 (App Router) + TypeScript | 与 StudyPal 一致 |
 | Styling | Tailwind CSS + shadcn/ui | 按需引入，不用全套 |
-| Database / Auth / Storage | Supabase | 表 + 文件存储 + 简单 RLS |
+| Database / Storage | Supabase (Postgres + Storage) | 4 张表 + `resumes` bucket |
+| HR Auth | 单一共享密码（env 配置）+ httpOnly cookie | MVP 简化，进 `/admin` |
+| 候选人 Auth | Supabase Auth · **Magic Link** | 邮箱一次性登录链接 |
 | AI | OpenAI 兼容 SDK，默认 DeepSeek | 走 `lib/ai/provider.ts` 抽象 |
 | 推送 | 飞书自定义群机器人 webhook | 最简集成，无需 OAuth |
 | Form | react-hook-form + zod | 候选人投递表单 |
@@ -26,14 +30,19 @@
 ```
 src/
 ├── app/
-│   ├── page.tsx                 # 首页（候选人/HR 入口）
-│   ├── jobs/                    # 候选人侧 — 公开浏览
-│   │   ├── page.tsx             # 岗位列表
+│   ├── page.tsx                 # 招聘门户首页（公开，岗位列表入口）
+│   ├── jobs/                    # 候选人侧 — 公开
+│   │   ├── page.tsx             # 所有 open 岗位
 │   │   └── [id]/
-│   │       ├── page.tsx         # 岗位详情
-│   │       └── apply/page.tsx   # 投递表单
-│   ├── admin/                   # HR 侧 — 需密码
+│   │       ├── page.tsx         # 岗位详情 + 投递按钮
+│   │       └── apply/
+│   │           ├── page.tsx     # 投递流程（3 step: login/upload/review）
+│   │           └── callback/    # Supabase Auth magic link 回跳
+│   ├── my-applications/         # 候选人登录后 — 查看自己的投递
+│   ├── applied/[id]/            # 投递成功页
+│   ├── admin/                   # HR 侧 — 共享密码
 │   │   ├── login/page.tsx
+│   │   ├── page.tsx             # 工作台
 │   │   ├── jobs/                # 岗位 CRUD
 │   │   │   ├── page.tsx
 │   │   │   ├── new/page.tsx
@@ -43,8 +52,10 @@ src/
 │   │       └── [id]/page.tsx    # 候选人详情 + 评分理由
 │   └── api/
 │       ├── jobs/                # POST/GET/PATCH 岗位
-│       ├── applications/        # POST 投递、GET 列表
-│       ├── score/[id]/          # POST 触发/重跑评分
+│       ├── resume/parse/        # POST 同步：文件 → ParsedResume（autofill 用）
+│       ├── applications/        # POST 提交已解析的申请
+│       ├── score/[id]/          # POST 触发评分（异步）
+│       ├── admin/login/         # HR 密码登录
 │       └── feishu/test/         # POST 测试 webhook
 ├── components/ui/               # shadcn 复制粘贴的小组件
 ├── features/                    # 业务模块（按域分）
@@ -74,33 +85,48 @@ src/
 - `feishu_logs` — 推送审计
 - Supabase Storage bucket `resumes` — 简历原文件
 
-## 4. 评分流水线（核心）
+## 4. 评分流水线（两阶段）
 
+**阶段 1 — 候选人侧同步解析（autofill 前提）**
 ```
-candidate submit form
-  → POST /api/applications              (insert row, status=received)
-    → upload resume to storage
-    → return application_id
-  → POST /api/score/[id]                (server action, fire-and-forget)
-    → fetch resume, parse text (pdf/docx)
-    → LLM call #1: text → ParsedResume json   (status=parsing)
-    → LLM call #2: ParsedResume + criteria → ScoreResult json   (status=scoring)
-    → write back, status=scored
-    → if score.total >= job.push_threshold && score.passed_hard:
-        → POST feishu webhook (interactive card)
-        → status=pushed, write feishu_logs
+Step ④ 上传简历到 Storage
+  → POST /api/resume/parse  (同步, 5-15s)
+    → extract text (pdf/docx)
+    → LLM Call #1: text → ParsedResume JSON
+    → 返回给前端做 autofill
+  → Step ⑥ 候选人 review 表单（含 parsed_resume 编辑过的版本）
+  → POST /api/applications
+    → insert row, status=received, parsed_resume=<reviewed>
+    → fire-and-forget → POST /api/score/[id]
+```
+
+**阶段 2 — 后台异步评分**
+```
+POST /api/score/[id]
+  → status=scoring
+  → LLM Call #2: parsed_resume + job.criteria → ScoreResult JSON
+  → status=scored
+  → if score.passed_hard && score.total >= job.push_threshold:
+      → POST feishu webhook (interactive card)
+      → status=pushed, write feishu_logs
 ```
 
 详细 prompt 设计见 [docs/prompt-engineering.md](docs/prompt-engineering.md)。
+完整用户旅程见 [docs/user-journeys.md](docs/user-journeys.md)。
 
 ## 5. 安全与隐私
 
-- HR 后台用单一共享密码登录（MVP 简化），密码存 env，前端只在 cookie 里放 session token
-- Supabase RLS：`jobs` 公开 read open 状态；`applications` 仅 service_role 写读
-- 候选人侧**永不展示**评分细节，只显示「评估中 / 已收到，HR 会尽快联系」
-- 同一邮箱 + 同一岗位 30 天内不重复评分（DB unique check + UI 提示）
-- 文件大小限制 10MB，仅 pdf / docx
+- **HR**：单一共享密码（env `HR_ACCESS_PASSWORD`），成功后 set httpOnly cookie；middleware 守卫 `/admin/*`
+- **候选人**：Supabase Auth magic link，session 由 Supabase Auth cookie 管理
+- **RLS 策略**：
+  - `jobs` — 公开 read 但仅 `status='open'` 的行
+  - `applications` — 写入走 service_role（后端）；候选人可 `select` `candidate_user_id = auth.uid()` 的自己的行（用于 /my-applications）
+  - `feishu_logs` — 仅 service_role
+- **候选人侧永不展示**评分数值和评分细节，只显示「评估中 / 已收到」
+- 同一 `candidate_user_id` + 同一 `job_id` 30 天内不重复投递（应用层判断 + UI 提示）
+- 简历文件限制 10MB，仅 pdf / docx，存 `resumes/<user-id>/<ts>.<ext>`
 - 所有 AI 输出都过 zod schema 校验，失败重试 1 次，再失败标记 `status=failed`
+- HR 入口**不在首页导出**（/admin/login 只能通过 URL 访问，footer 放一个"企业登录"小字）
 
 ## 6. 飞书推送格式
 

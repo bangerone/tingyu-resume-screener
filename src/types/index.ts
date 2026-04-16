@@ -96,10 +96,14 @@ export interface ScoreResult {
 export interface Application {
   id: string;
   job_id: string;
+  /** Supabase auth.users.id — nullable only for legacy/migrated rows */
+  candidate_user_id: string | null;
   candidate_name: string;
   candidate_email: string;
   candidate_phone: string;
   resume_file_path: string; // supabase storage key
+  /** Autofill is done BEFORE application row is created (see user-journeys.md
+   *  Step ⑤). So parsed_resume is always set by submit-time. */
   parsed_resume: ParsedResume | null;
   score: ScoreResult | null;
   status: ApplicationStatus;

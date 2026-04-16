@@ -22,3 +22,10 @@
 4. **Steps** — 有序的实施步骤
 5. **Acceptance** — 完成的客观验收标准
 6. **Out of scope** — 明确不要做的事
+
+## 辅助参考（任务卡可引用但不是任务本身）
+- [`../user-journeys.md`](../user-journeys.md) — HR 和候选人完整旅程（产品体验权威）
+- [`../architecture.md`](../architecture.md) — 技术架构 + 数据流
+- [`../data-model.sql`](../data-model.sql) — Supabase 建表 + RLS
+- [`../prompt-engineering.md`](../prompt-engineering.md) — AI prompt 设计
+- [`../feishu-integration.md`](../feishu-integration.md) — 飞书机器人接入

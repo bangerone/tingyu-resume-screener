@@ -36,10 +36,13 @@ create trigger trg_jobs_updated_at before update on jobs
 create table if not exists applications (
   id uuid primary key default uuid_generate_v4(),
   job_id uuid not null references jobs(id) on delete cascade,
+  -- Supabase Auth 的候选人账号（magic link 登录后写入）
+  candidate_user_id uuid references auth.users(id) on delete set null,
   candidate_name text not null,
   candidate_email text not null,
   candidate_phone text not null default '',
   resume_file_path text not null,
+  -- autofill 在提交前已完成，parsed_resume 理应非 null
   parsed_resume jsonb,
   score jsonb,
   status text not null default 'received'
@@ -51,6 +54,7 @@ create table if not exists applications (
 
 create index if not exists applications_job_id_idx on applications(job_id);
 create index if not exists applications_status_idx on applications(status);
+create index if not exists applications_candidate_user_idx on applications(candidate_user_id);
 -- 用于按总分排序的索引（jsonb 表达式索引）
 create index if not exists applications_total_score_idx
   on applications(((score->>'total')::int) desc);
@@ -85,11 +89,22 @@ drop policy if exists "public read open jobs" on jobs;
 create policy "public read open jobs" on jobs
   for select using (status = 'open');
 
--- applications: 不公开。HR 通过 service_role 后端访问。
+-- applications:
+--   · HR 走 service_role (bypass RLS) 读写所有行
+--   · 候选人（已登录）只能 read 自己的行，用于 /my-applications
 alter table applications enable row level security;
-drop policy if exists "deny anon" on applications;
-create policy "deny anon" on applications
-  for all using (false);
+drop policy if exists "candidate read own applications" on applications;
+create policy "candidate read own applications" on applications
+  for select using (auth.uid() = candidate_user_id);
+drop policy if exists "deny anon write" on applications;
+create policy "deny anon write" on applications
+  for insert with check (false);
+drop policy if exists "deny anon update" on applications;
+create policy "deny anon update" on applications
+  for update using (false);
+drop policy if exists "deny anon delete" on applications;
+create policy "deny anon delete" on applications
+  for delete using (false);
 
 -- feishu_logs: 同上
 alter table feishu_logs enable row level security;

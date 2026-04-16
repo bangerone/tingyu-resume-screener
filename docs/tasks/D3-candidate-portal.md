@@ -1,47 +1,83 @@
-# D3 — 候选人门户（公开）
+# D3 — 招聘门户 + 候选人投递流程（核心体验）
 
 ## Status: ⏳ Pending
 
 ## Goal
-未登录用户能浏览 open 岗位、看详情、上传简历投递，提交后看到「已收到」状态页。
+候选人能：浏览岗位 → magic link 登录 → 上传简历 → **AI 自动填表** → review 修改 → 提交 → 看到投递状态。
+这是全项目**最重要的产品体验**。
 
-## Inputs
-- `CLAUDE.md` §5 安全（候选人侧不展示评分）
-- `src/types/index.ts` (Application)
-- `docs/data-model.sql`
+## Inputs (必读)
+- `CLAUDE.md` §4 两阶段流水线
+- **`docs/user-journeys.md`** ← 重点读候选人部分 Step ①-⑧
+- `docs/prompt-engineering.md` (Call #1 的 prompt)
+- `src/types/index.ts` (ParsedResume / Application)
 
 ## Deliverables
-- `src/app/jobs/page.tsx` — 公开岗位列表（status=open）
-- `src/app/jobs/[id]/page.tsx` — 岗位详情 + 「立即投递」按钮
-- `src/app/jobs/[id]/apply/page.tsx` — 投递表单
-- `src/app/applied/[id]/page.tsx` — 投递成功页
-- `src/app/api/applications/route.ts` — POST 接收投递（multipart/form-data）
-- `src/features/applications/apply-form.tsx` — react-hook-form + zod 表单
-  - 字段：姓名 / 邮箱 / 电话 / 简历上传（pdf/docx, ≤10MB）
-  - 提交：先上传文件到 Storage，再 POST application
-- `src/features/applications/job-card.tsx` — 公开岗位卡片
-- `src/lib/validators/application.ts` — zod schema
+
+### 公开招聘门户
+- `src/app/page.tsx` — 替换占位 hero，真实拉取岗位列表做 teaser
+- `src/app/jobs/page.tsx` — 所有 open 岗位（筛选：部门 / 地点）
+- `src/app/jobs/[id]/page.tsx` — 岗位详情 + 底部「立即投递」大按钮
+- `src/features/jobs/job-card.tsx` — 卡片组件
+
+### 候选人登录（Magic Link）
+- `src/features/auth/magic-link-form.tsx` — 邮箱输入框 + 提交
+- `src/features/auth/use-session.ts` — 客户端 hook：`useSession()` 返回当前候选人
+- `src/app/auth/callback/route.ts` — 已在 D1 实现
+
+### 投递流程（核心）
+- `src/app/jobs/[id]/apply/page.tsx` — 三步式 stepper
+  - **Step 0 (若未登录)**: `<MagicLinkForm />`
+  - **Step 1**: 上传简历（拖拽区 / 点选）
+  - **Step 2**: Loading 骨架屏 + 文案「AI 正在解析你的简历…」
+  - **Step 3**: 自动填充的表单 + 检查修改 + 确认投递按钮
+- `src/features/applications/apply-stepper.tsx` — 三步骤容器
+- `src/features/applications/resume-upload.tsx` — 文件选择 + 上传 Storage
+- `src/features/applications/autofill-form.tsx` — ⭐ 亮点组件
+  - 渲染 ParsedResume 所有字段
+  - 每个字段旁有 ✨ 表示「AI 已填写」
+  - 字段可编辑；教育/工作经历数组可增删条目
+- `src/app/applied/[id]/page.tsx` — 投递成功页（不显示分数）
+- `src/app/my-applications/page.tsx` — 候选人投递列表（服务端 RSC + `auth.uid()` 查）
+
+### API
+- `src/app/api/resume/parse/route.ts` — POST `{ file_path }` → `{ parsed_resume }`
+  - 依赖 D4 的 `lib/ai/parser.ts`。若 D4 未完成，D3 可先 mock 返回固定 ParsedResume，并在 commit message 注明 "mock until D4"
+- `src/app/api/applications/route.ts` — POST 提交（不含上传，只含已 parsed 的结构）
+- `src/app/api/applications/check/route.ts` — GET `?job_id=` 检查候选人 30d 内是否投过（读 session.user）
+
+### 工具
+- `src/lib/validators/application.ts` — zod schema: parsed_resume + personal info
+- `src/features/applications/index.ts` — barrel
 
 ## Steps
-1. 列表/详情页用 anon supabase client（RLS 限定 open 状态）
-2. apply-form：上传文件用 Supabase Storage `from('resumes').upload(...)`，path 用 `<applicationDraftId>/<filename>`（先生成 uuid）
-3. POST `/api/applications`：
-   - service_role 写入 `applications` 行（status=`received`）
-   - **同步**触发 `fetch('/api/score/' + id, { method:'POST' })`，不 await（fire-and-forget）
-   - 返回 `{ application_id }`
-4. 重定向到 `/applied/[id]`，显示「已收到，HR 会尽快与您联系」+ 不展示分数
-5. 重复投递判断：客户端先 GET `/api/applications/check?email=&job=` 检查 30 天内是否投过
+1. 首页 + /jobs + /jobs/[id] 纯 RSC 实现（anon client 读 open jobs）
+2. 点「立即投递」跳 /jobs/[id]/apply
+3. `ApplyStepper` 组件根据 session state 决定 Step 0 是否出现
+4. Step 1 上传：拿到 `file_path` 后自动 POST `/api/resume/parse` 进入 Step 2
+5. Step 2 等待期展示动画（shadcn skeleton）+ 文案 + 顶部进度条
+6. Step 3 AutofillForm：用 `react-hook-form` 的 `defaultValues = parsed_resume`
+7. 提交前 dedupe 检查：GET `/api/applications/check?job_id=` → 若已投 30d 内 → 弹窗
+8. 提交：POST `/api/applications`，成功后 `router.push('/applied/' + id)`
+9. /applied/[id]：展示「已收到」大对勾动画 + 两个按钮
+10. /my-applications：服务端 RSC 用 `createServerClient` + `supabase.auth.getUser()` 查 applications
 
-## Acceptance
-- [ ] `/jobs` 看到 sample job
-- [ ] 进详情页内容渲染正常（描述支持简单 markdown 即可，可用 `react-markdown`，但不强制）
-- [ ] 投递表单完整可提交（含文件上传到 Storage）
-- [ ] 提交后 Supabase `applications` 多一行，文件在 `resumes` bucket 里
-- [ ] 投递成功页**不展示分数**，只显示「已收到」
-- [ ] 30 天内同邮箱重复投递同岗位 → 弹窗提示「您已投过」
-- [ ] 表单有客户端校验（必填、邮箱格式、文件类型/大小）
+## Acceptance（端到端演示脚本）
+- [ ] 匿名用户访问 `/jobs` 看到 sample job
+- [ ] 点详情 → 内容渲染正常
+- [ ] 点「立即投递」，未登录 → 显示邮箱输入框
+- [ ] 输入真实邮箱，30s 内收到 magic link 邮件，点击回跳，session 建立
+- [ ] Step 1 能上传 PDF（或 docx），文件进到 Storage 对应路径
+- [ ] Step 2 loading 动画 5-15s 后进入 Step 3（若用 mock parser 则 1s 内）
+- [ ] Step 3 表单看到自动填充的姓名/教育/经历，带 ✨ 标记
+- [ ] 修改任意字段后提交，成功跳 `/applied/[id]`
+- [ ] 成功页**不显示任何分数**
+- [ ] `/my-applications` 看到刚才这次投递，状态显示「评估中」或「已收到」
+- [ ] 再次投递同岗位（30 天内）→ 弹窗「你已投过」
+- [ ] 登出后访问 `/my-applications` → 自动要求登录
 
 ## Out of scope
-- 不做候选人账号 / 历史投递查询
-- 不做"上传中预览简历"功能
-- 不实现真实评分（D4）— D3 提交后 application 状态停在 `received` 即可
+- 不做真实评分（D4）— 只要 Application 写入 + parsed_resume 填充即可
+- 不做飞书推送（D5）
+- 不做简历预览（D5）
+- 不做"多份简历历史"/"重复使用上次简历"
