@@ -27,12 +27,30 @@ export async function GET() {
     return NextResponse.json({ error: "disabled in production" }, { status: 404 });
   }
 
-  // DB 连通性
+  // DB 连通性 + 5 张表是否存在 + 行数
   let dbStatus: { status: Status; message?: string } = { status: "ok" };
+  const tableCounts: Record<string, number | string> = {};
   try {
-    const rows = await db.execute(sql`SELECT 1 AS one`);
-    // drizzle mysql2 returns [rows, fields]
-    if (!rows) dbStatus = { status: "error", message: "empty response" };
+    await db.execute(sql`SELECT 1 AS one`);
+    for (const t of [
+      "candidates",
+      "email_codes",
+      "jobs",
+      "applications",
+      "feishu_logs",
+    ]) {
+      try {
+        const res: any = await db.execute(
+          sql.raw(`SELECT COUNT(*) AS c FROM \`${t}\``),
+        );
+        // mysql2 result shape: [rows, fields]
+        const rows = Array.isArray(res) ? res[0] : res?.rows ?? res;
+        const row = Array.isArray(rows) ? rows[0] : rows;
+        tableCounts[t] = Number(row?.c ?? row?.C ?? 0);
+      } catch (e: any) {
+        tableCounts[t] = `missing: ${e?.message ?? "unknown"}`;
+      }
+    }
   } catch (e: any) {
     dbStatus = { status: "error", message: e?.message ?? String(e) };
   }
@@ -40,6 +58,7 @@ export async function GET() {
   return NextResponse.json({
     ok: dbStatus.status === "ok",
     db: dbStatus,
+    tables: tableCounts,
     env: {
       core: envStatus(["DATABASE_URL", "JWT_SECRET", "HR_ACCESS_PASSWORD"]),
       cos: envStatus([

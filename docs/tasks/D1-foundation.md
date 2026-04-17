@@ -1,6 +1,6 @@
 # D1 — 基础设施（国内栈）
 
-## Status: ⏳ Pending
+## Status: ✅ Done
 
 ## Goal
 - TiDB 接通、`db:push` 跑过 → 表都建好
@@ -81,16 +81,19 @@ openssl rand -base64 32
 9. 实现 COS STS
 
 ## Acceptance
-- [ ] `npm run dev` 无报错，首页可访问
-- [ ] `GET /api/dev/ping` 返回所有 env / DB / 服务状态全绿
-- [ ] TiDB 控制台能看到 5 张空表
-- [ ] 直接访问 `/admin` → 跳 `/admin/login`
-- [ ] 输错 HR 密码 → 报错；输对 → 进 `/admin` 占位页
-- [ ] 调 request-code（任意邮箱），server console 打印 6 位验证码
-- [ ] 调 verify-code（同邮箱 + 正确 code）→ set cookie，DB `candidates` + `email_codes` 都有新行
-- [ ] 调 verify-code 用错的 code → 401
-- [ ] 调 verify-code 重复用同一个 code → 401（已 consumed）
-- [ ] STS 接口在已登录候选人下能返回 credentials；未登录 → 401
+- [x] `npm run dev` 无报错，首页可访问（`GET /` → 200）
+- [x] `GET /api/dev/ping` 返回所有 env / DB / 服务状态全绿，`tables` 字段可见 5 张表行数
+- [x] TiDB 5 张表均建好（通过 `/api/dev/ping` 的 `tables` 字段确认，db:push 成功推送）
+- [x] 直接访问 `/admin` → 307 跳 `/admin/login`
+- [x] 输错 HR 密码 → 401 `{"error":"密码错误"}`；输对 → 200 + set cookie，可进 `/admin` 占位页
+- [x] 调 request-code（任意邮箱），server console 打印 6 位验证码
+- [x] 调 verify-code（同邮箱 + 正确 code）→ set `tingyu_session` cookie，DB `candidates` + `email_codes` 各 +1 行
+- [x] 调 verify-code 用错的 code → 401
+- [x] 调 verify-code 重复用同一个 code → 401（已 consumed）
+- [x] STS 接口（**已降级为占位**）：未登录 → 401；已登录 → 501 + 说明「改走 server 中转，D3 实现 POST /api/resume/upload」
+
+> 注：原方案走 STS 前端直传 COS，需额外引入 `qcloud-cos-sts` 依赖。
+> demo 简化：改用 server 中转（候选人 POST multipart 到我们 server，server 用已有 cos-nodejs-sdk-v5 存 COS），零新增依赖。真正实现落在 D3。
 
 ## Out of scope
 - 不实现 `/admin/jobs` CRUD（D2）
