@@ -16,6 +16,7 @@ import {
 import { formatDateTime } from "@/lib/utils";
 import { ScoreBadge } from "@/features/scoring/score-badge";
 import { ScoreCard } from "@/features/scoring/score-card";
+import { ScoreRadar } from "@/features/scoring/score-radar";
 import { ApplicationActions } from "@/features/scoring/application-actions";
 import { getSignedReadUrl } from "@/lib/storage/cos";
 import type { ApplicationStatus } from "@/types";
@@ -160,10 +161,16 @@ export default async function AdminApplicationDetailPage({
                 <CardHeader>
                   <CardTitle className="text-base">评估结论</CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="space-y-4">
                   <p className="text-sm text-slate-700">
                     {app.score.reasoning}
                   </p>
+                  <div className="border-t border-slate-100 pt-2">
+                    <h4 className="mb-1 text-xs font-medium uppercase text-slate-500">
+                      5 维度概览
+                    </h4>
+                    <ScoreRadar score={app.score} />
+                  </div>
                 </CardContent>
               </Card>
               <ScoreCard score={app.score} />

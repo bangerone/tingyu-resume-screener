@@ -3,21 +3,27 @@
 // ============================================================
 // 公共候选人顶部 nav
 // - logo 左
-// - 右：在招岗位 / 我的投递（登录后）/ 登出（登录后）/ 邮箱前缀（登录后）
+// - 桌面：横排链接 + 登录态信息
+// - 移动端：汉堡菜单折叠链接与登出
 // ============================================================
 
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Menu, X } from "lucide-react";
 import { Toaster } from "@/components/ui/toast";
 import { candidateLogout, useCandidateSession } from "@/features/auth";
+import { cn } from "@/lib/utils";
 
 export function CandidateNav() {
   const router = useRouter();
   const { user, loading, refresh } = useCandidateSession();
+  const [open, setOpen] = useState(false);
 
   async function onLogout() {
     await candidateLogout();
     await refresh();
+    setOpen(false);
     router.push("/");
     router.refresh();
   }
@@ -26,10 +32,16 @@ export function CandidateNav() {
     <>
       <nav className="border-b border-slate-200 bg-white">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <Link href="/" className="text-lg font-bold tracking-tight">
+          <Link
+            href="/"
+            className="text-lg font-bold tracking-tight"
+            onClick={() => setOpen(false)}
+          >
             庭宇 <span className="text-brand-600">Careers</span>
           </Link>
-          <div className="flex items-center gap-4 text-sm">
+
+          {/* 桌面菜单 */}
+          <div className="hidden items-center gap-4 text-sm sm:flex">
             <Link href="/jobs" className="text-slate-600 hover:text-slate-900">
               在招岗位
             </Link>
@@ -43,7 +55,7 @@ export function CandidateNav() {
             )}
             {loading ? null : user ? (
               <>
-                <span className="hidden text-xs text-slate-400 sm:inline">
+                <span className="hidden text-xs text-slate-400 md:inline">
                   {user.email}
                 </span>
                 <button
@@ -54,6 +66,58 @@ export function CandidateNav() {
                   退出
                 </button>
               </>
+            ) : null}
+          </div>
+
+          {/* 移动端汉堡 */}
+          <button
+            type="button"
+            className="rounded-md p-2 text-slate-600 hover:bg-slate-100 sm:hidden"
+            onClick={() => setOpen((x) => !x)}
+            aria-label="切换菜单"
+            aria-expanded={open}
+          >
+            {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
+        </div>
+
+        {/* 移动端折叠面板 */}
+        <div
+          className={cn(
+            "overflow-hidden border-t border-slate-100 bg-white transition-[max-height] duration-200 ease-out sm:hidden",
+            open ? "max-h-72" : "max-h-0",
+          )}
+        >
+          <div className="space-y-1 px-4 py-3 text-sm">
+            <Link
+              href="/jobs"
+              className="block rounded-md px-3 py-2 text-slate-700 hover:bg-slate-50"
+              onClick={() => setOpen(false)}
+            >
+              在招岗位
+            </Link>
+            {user && (
+              <Link
+                href="/my-applications"
+                className="block rounded-md px-3 py-2 text-slate-700 hover:bg-slate-50"
+                onClick={() => setOpen(false)}
+              >
+                我的投递
+              </Link>
+            )}
+            {user ? (
+              <div className="mt-2 flex items-center justify-between rounded-md bg-slate-50 px-3 py-2">
+                <span className="truncate text-xs text-slate-500">
+                  {user.email}
+                </span>
+                <button
+                  type="button"
+                  onClick={onLogout}
+                  className="text-xs font-medium text-slate-700 hover:text-slate-900"
+                >
+                  退出
+                </button>
+              </div>
             ) : null}
           </div>
         </div>

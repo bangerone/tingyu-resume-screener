@@ -12,46 +12,37 @@
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
+    "@hookform/resolvers": "^3.9.0",
+    "class-variance-authority": "^0.7.0",
+    "clsx": "^2.1.1",
+    "cos-nodejs-sdk-v5": "^2.14.5",
+    "drizzle-orm": "^0.33.0",
+    "jose": "^5.6.3",
+    "lucide-react": "^0.424.0",
+    "mammoth": "^1.8.0",
+    "mysql2": "^3.11.0",
     "next": "^14.2.5",
+    "openai": "^4.55.0",
+    "pdf-parse": "^1.1.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-
-    "drizzle-orm": "^0.33.0",
-    "mysql2": "^3.11.0",
-
-    "jose": "^5.6.3",
-
-    "resend": "^3.5.0",
-
-    "cos-nodejs-sdk-v5": "^2.14.5",
-
-    "openai": "^4.55.0",
-    "zod": "^3.23.8",
-
     "react-hook-form": "^7.52.1",
-    "@hookform/resolvers": "^3.9.0",
-
+    "recharts": "^3.8.1",
+    "resend": "^3.5.0",
     "tailwind-merge": "^2.4.0",
-    "clsx": "^2.1.1",
-    "class-variance-authority": "^0.7.0",
-    "lucide-react": "^0.424.0",
-
-    "pdf-parse": "^1.1.1",
-    "mammoth": "^1.8.0"
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@types/node": "^20.14.10",
+    "@types/pdf-parse": "^1.1.4",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
-    "@types/pdf-parse": "^1.1.4",
-
-    "drizzle-kit": "^0.24.0",
-
-    "typescript": "^5.5.3",
-    "tailwindcss": "^3.4.6",
-    "postcss": "^8.4.39",
     "autoprefixer": "^10.4.19",
+    "drizzle-kit": "^0.24.0",
     "eslint": "^8.57.0",
-    "eslint-config-next": "^14.2.5"
+    "eslint-config-next": "^14.2.5",
+    "postcss": "^8.4.39",
+    "tailwindcss": "^3.4.6",
+    "typescript": "^5.5.3"
   }
 }

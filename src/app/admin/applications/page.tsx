@@ -7,15 +7,11 @@
 
 import Link from "next/link";
 import { and, asc, desc, eq, sql, type SQL } from "drizzle-orm";
+import { Users } from "lucide-react";
 import { db } from "@/lib/db/client";
 import { applications, jobs } from "@/lib/db/schema";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
 import { formatDateTime } from "@/lib/utils";
 import { ScoreBadge } from "@/features/scoring/score-badge";
 import type { ApplicationStatus } from "@/types";
@@ -157,79 +153,142 @@ export default async function AdminApplicationsPage({
       </Card>
 
       {rows.length === 0 ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>还没有候选人</CardTitle>
-            <CardDescription>
-              当有候选人投递简历后，这里会按总分展示。
-            </CardDescription>
-          </CardHeader>
-        </Card>
+        <EmptyState
+          icon={<Users className="h-5 w-5" />}
+          title="还没有匹配的候选人"
+          description="当有候选人投递简历后，这里会按总分展示。可以先去岗位管理发布新岗位。"
+          action={
+            <Link
+              href="/admin/jobs"
+              className="text-sm font-medium text-brand-600 hover:underline"
+            >
+              去岗位管理 →
+            </Link>
+          }
+        />
       ) : (
-        <Card className="overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
-              <tr>
-                <th className="px-4 py-3 font-medium">候选人</th>
-                <th className="px-4 py-3 font-medium">岗位</th>
-                <th className="px-4 py-3 font-medium">总分</th>
-                <th className="px-4 py-3 font-medium">评语</th>
-                <th className="px-4 py-3 font-medium">状态</th>
-                <th className="px-4 py-3 font-medium">投递时间</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-200">
-              {rows.map((r) => (
-                <tr
-                  key={r.id}
-                  className="cursor-pointer hover:bg-slate-50/70"
-                >
-                  <td className="px-4 py-3">
-                    <Link
-                      href={`/admin/applications/${r.id}`}
-                      className="font-medium text-slate-900 hover:text-brand-600"
-                    >
+        <>
+          {/* 移动端：卡片 */}
+          <div className="space-y-3 md:hidden">
+            {rows.map((r) => (
+              <Link
+                key={r.id}
+                href={`/admin/applications/${r.id}`}
+                className="block rounded-xl border border-slate-200 bg-white p-4 transition hover:border-brand-300 hover:shadow-sm"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate font-medium text-slate-900">
                       {r.candidateName || "(未填)"}
-                    </Link>
-                    <div className="text-xs text-slate-500">
+                    </div>
+                    <div className="mt-0.5 truncate text-xs text-slate-500">
                       {r.candidateEmail}
                     </div>
-                  </td>
-                  <td className="px-4 py-3 text-slate-700">
-                    {r.jobTitle ?? "—"}
-                  </td>
-                  <td className="px-4 py-3">
+                    <div className="mt-1 truncate text-xs text-slate-500">
+                      {r.jobTitle ?? "—"}
+                    </div>
+                  </div>
+                  <div className="shrink-0 text-right">
                     <ScoreBadge score={r.score?.total ?? null} />
                     {r.score && !r.score.passed_hard && (
-                      <span className="ml-2 text-xs text-rose-600">
+                      <div className="mt-1 text-[10px] text-rose-600">
                         ❌ 硬性
-                      </span>
+                      </div>
                     )}
-                  </td>
-                  <td className="px-4 py-3 text-slate-600 max-w-[320px]">
-                    <span className="line-clamp-2">
-                      {r.score?.reasoning ?? "—"}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={
-                        "inline-flex rounded-full px-2 py-0.5 text-xs font-medium " +
-                        (STATUS_BADGE[r.status as ApplicationStatus] ??
-                          STATUS_BADGE.received)
-                      }
-                    >
-                      {STATUS_LABEL[r.status as ApplicationStatus] ?? r.status}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-xs text-slate-500">
+                  </div>
+                </div>
+                {r.score?.reasoning && (
+                  <p className="mt-2 line-clamp-2 text-xs text-slate-600">
+                    {r.score.reasoning}
+                  </p>
+                )}
+                <div className="mt-2 flex items-center justify-between">
+                  <span
+                    className={
+                      "inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium " +
+                      (STATUS_BADGE[r.status as ApplicationStatus] ??
+                        STATUS_BADGE.received)
+                    }
+                  >
+                    {STATUS_LABEL[r.status as ApplicationStatus] ?? r.status}
+                  </span>
+                  <span className="text-[11px] text-slate-400">
                     {formatDateTime(r.createdAt)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </Card>
+                  </span>
+                </div>
+              </Link>
+            ))}
+          </div>
+
+          {/* 桌面：表格 */}
+          <Card className="hidden overflow-hidden md:block">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+                  <tr>
+                    <th className="px-4 py-3 font-medium">候选人</th>
+                    <th className="px-4 py-3 font-medium">岗位</th>
+                    <th className="px-4 py-3 font-medium">总分</th>
+                    <th className="px-4 py-3 font-medium">评语</th>
+                    <th className="px-4 py-3 font-medium">状态</th>
+                    <th className="px-4 py-3 font-medium">投递时间</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200">
+                  {rows.map((r) => (
+                    <tr
+                      key={r.id}
+                      className="cursor-pointer hover:bg-slate-50/70"
+                    >
+                      <td className="px-4 py-3">
+                        <Link
+                          href={`/admin/applications/${r.id}`}
+                          className="font-medium text-slate-900 hover:text-brand-600"
+                        >
+                          {r.candidateName || "(未填)"}
+                        </Link>
+                        <div className="text-xs text-slate-500">
+                          {r.candidateEmail}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-slate-700">
+                        {r.jobTitle ?? "—"}
+                      </td>
+                      <td className="px-4 py-3">
+                        <ScoreBadge score={r.score?.total ?? null} />
+                        {r.score && !r.score.passed_hard && (
+                          <span className="ml-2 text-xs text-rose-600">
+                            ❌ 硬性
+                          </span>
+                        )}
+                      </td>
+                      <td className="max-w-[320px] px-4 py-3 text-slate-600">
+                        <span className="line-clamp-2">
+                          {r.score?.reasoning ?? "—"}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span
+                          className={
+                            "inline-flex rounded-full px-2 py-0.5 text-xs font-medium " +
+                            (STATUS_BADGE[r.status as ApplicationStatus] ??
+                              STATUS_BADGE.received)
+                          }
+                        >
+                          {STATUS_LABEL[r.status as ApplicationStatus] ??
+                            r.status}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-xs text-slate-500">
+                        {formatDateTime(r.createdAt)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        </>
       )}
     </div>
   );

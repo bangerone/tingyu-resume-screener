@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { desc, eq } from "drizzle-orm";
+import { FileText } from "lucide-react";
 import { db } from "@/lib/db/client";
 import { applications, jobs } from "@/lib/db/schema";
 import { getCandidateSession } from "@/lib/auth/candidate";
@@ -11,13 +12,15 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
 import { formatDateTime } from "@/lib/utils";
 import type { ApplicationStatus } from "@/types";
 import { MyApplicationsLogin } from "./_login";
 
 export const dynamic = "force-dynamic";
 
-// 状态展示策略（候选人永不看分数）
+// 状态展示策略（候选人永不看分数 —— 见 CLAUDE.md §5 / user-journeys ⑧）
 function statusLabel(s: ApplicationStatus): { text: string; color: string } {
   switch (s) {
     case "received":
@@ -88,67 +91,100 @@ export default async function MyApplicationsPage() {
         </header>
 
         {rows.length === 0 ? (
-          <Card>
-            <CardContent className="py-12 text-center">
-              <p className="text-sm text-slate-600">你还没有投递过岗位。</p>
-              <div className="mt-4">
-                <Link
-                  href="/jobs"
-                  className="text-sm font-medium text-brand-600 hover:underline"
-                >
-                  去看看在招岗位 →
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
+          <EmptyState
+            icon={<FileText className="h-5 w-5" />}
+            title="你还没有投递过岗位"
+            description="先去浏览在招岗位，AI 会帮你自动填好申请表。"
+            action={
+              <Link href="/jobs">
+                <Button>去看看在招岗位</Button>
+              </Link>
+            }
+          />
         ) : (
-          <Card className="overflow-hidden">
-            <table className="w-full text-sm">
-              <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
-                <tr>
-                  <th className="px-4 py-3 font-medium">岗位</th>
-                  <th className="px-4 py-3 font-medium">投递时间</th>
-                  <th className="px-4 py-3 font-medium">状态</th>
-                  <th className="px-4 py-3"></th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200">
-                {rows.map((r) => {
-                  const s = statusLabel(r.status as ApplicationStatus);
-                  return (
-                    <tr key={r.id} className="hover:bg-slate-50/70">
-                      <td className="px-4 py-3">
-                        <div className="font-medium text-slate-900">
+          <>
+            {/* 移动端：卡片列表 */}
+            <div className="space-y-3 sm:hidden">
+              {rows.map((r) => {
+                const s = statusLabel(r.status as ApplicationStatus);
+                return (
+                  <Link
+                    key={r.id}
+                    href={`/applied/${r.id}`}
+                    className="block rounded-xl border border-slate-200 bg-white p-4 transition hover:border-brand-300 hover:shadow-sm"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className="truncate font-medium text-slate-900">
                           {r.jobTitle ?? "已下架岗位"}
                         </div>
-                        <div className="text-xs text-slate-500">
+                        <div className="mt-0.5 text-xs text-slate-500">
                           {r.jobDepartment || "—"} · {r.jobLocation || "不限"}
                         </div>
-                      </td>
-                      <td className="px-4 py-3 text-xs text-slate-500">
-                        {formatDateTime(r.createdAt)}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span
-                          className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${s.color}`}
-                        >
-                          {s.text}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <Link
-                          href={`/applied/${r.id}`}
-                          className="text-xs font-medium text-brand-600 hover:underline"
-                        >
-                          查看回执
-                        </Link>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </Card>
+                      </div>
+                      <span
+                        className={`inline-flex shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${s.color}`}
+                      >
+                        {s.text}
+                      </span>
+                    </div>
+                    <div className="mt-3 text-xs text-slate-500">
+                      {formatDateTime(r.createdAt)}
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+
+            {/* 桌面：表格 */}
+            <Card className="hidden overflow-hidden sm:block">
+              <table className="w-full text-sm">
+                <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+                  <tr>
+                    <th className="px-4 py-3 font-medium">岗位</th>
+                    <th className="px-4 py-3 font-medium">投递时间</th>
+                    <th className="px-4 py-3 font-medium">状态</th>
+                    <th className="px-4 py-3"></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200">
+                  {rows.map((r) => {
+                    const s = statusLabel(r.status as ApplicationStatus);
+                    return (
+                      <tr key={r.id} className="hover:bg-slate-50/70">
+                        <td className="px-4 py-3">
+                          <div className="font-medium text-slate-900">
+                            {r.jobTitle ?? "已下架岗位"}
+                          </div>
+                          <div className="text-xs text-slate-500">
+                            {r.jobDepartment || "—"} · {r.jobLocation || "不限"}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-xs text-slate-500">
+                          {formatDateTime(r.createdAt)}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span
+                            className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${s.color}`}
+                          >
+                            {s.text}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <Link
+                            href={`/applied/${r.id}`}
+                            className="text-xs font-medium text-brand-600 hover:underline"
+                          >
+                            查看回执
+                          </Link>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </Card>
+          </>
         )}
       </main>
     </div>

@@ -27,11 +27,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { apiJson } from "@/lib/api";
 import { toast } from "@/components/ui/toast";
 import { CriteriaEditor } from "./criteria-editor";
+import { JdToCriteria } from "./jd-to-criteria";
 import {
   emptyJobInput,
   jobInputSchema,
   type JobInput,
 } from "./job-schema";
+import type { ScreeningCriteria } from "@/types";
 
 interface Props {
   mode: "create" | "edit";
@@ -49,6 +51,7 @@ export function JobForm({ mode, jobId, defaultValues }: Props) {
     handleSubmit,
     watch,
     setValue,
+    getValues,
     formState: { errors },
   } = useForm<JobInput>({
     resolver: zodResolver(jobInputSchema),
@@ -56,6 +59,43 @@ export function JobForm({ mode, jobId, defaultValues }: Props) {
   });
 
   const pushThreshold = watch("pushThreshold") ?? 80;
+
+  // JD → criteria 生成后，追加到现有字段（不覆盖 HR 已填的）
+  function mergeGeneratedCriteria(gen: ScreeningCriteria) {
+    const cur = getValues("criteria") ?? {
+      hard: [],
+      skills: [],
+      bonus: [],
+      custom: [],
+    };
+    const seen = {
+      hard: new Set(cur.hard.map((h) => `${h.kind}|${h.label}`)),
+      skills: new Set(cur.skills.map((s) => s.name.toLowerCase())),
+      bonus: new Set(cur.bonus),
+      custom: new Set(cur.custom.map((c) => c.name)),
+    };
+    const merged: ScreeningCriteria = {
+      hard: [
+        ...cur.hard,
+        ...gen.hard.filter(
+          (h) => !seen.hard.has(`${h.kind}|${h.label}`),
+        ),
+      ],
+      skills: [
+        ...cur.skills,
+        ...gen.skills.filter((s) => !seen.skills.has(s.name.toLowerCase())),
+      ],
+      bonus: [
+        ...cur.bonus,
+        ...gen.bonus.filter((b) => !seen.bonus.has(b)),
+      ],
+      custom: [
+        ...cur.custom,
+        ...gen.custom.filter((c) => !seen.custom.has(c.name)),
+      ],
+    };
+    setValue("criteria", merged, { shouldDirty: true });
+  }
 
   async function save(target: "draft" | "open") {
     return handleSubmit(async (values) => {
@@ -146,7 +186,8 @@ export function JobForm({ mode, jobId, defaultValues }: Props) {
             AI 会基于下列维度给候选人打分。所有字段都可以留空，但越具体评分越准。
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-5">
+          <JdToCriteria onGenerated={mergeGeneratedCriteria} />
           <CriteriaEditor
             control={control}
             register={register}

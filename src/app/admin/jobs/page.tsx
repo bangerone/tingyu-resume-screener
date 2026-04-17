@@ -7,16 +7,12 @@
 
 import Link from "next/link";
 import { desc } from "drizzle-orm";
+import { Briefcase } from "lucide-react";
 import { db } from "@/lib/db/client";
 import { jobs } from "@/lib/db/schema";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
 import { formatDateTime } from "@/lib/utils";
 import { JobStatusActions } from "@/features/jobs";
 
@@ -40,67 +36,99 @@ export default async function AdminJobsListPage() {
       </div>
 
       {rows.length === 0 ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>还没有岗位</CardTitle>
-            <CardDescription>
-              点右上角「新建岗位」开始。新建时默认为草稿，发布后候选人才能看到。
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+        <EmptyState
+          icon={<Briefcase className="h-5 w-5" />}
+          title="还没有岗位"
+          description="新建时默认为草稿，发布后候选人才能在招聘门户看到。"
+          action={
             <Link href="/admin/jobs/new">
               <Button>+ 创建第一个岗位</Button>
             </Link>
-          </CardContent>
-        </Card>
+          }
+        />
       ) : (
-        <Card className="overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
-              <tr>
-                <th className="px-4 py-3 font-medium">标题</th>
-                <th className="px-4 py-3 font-medium">部门</th>
-                <th className="px-4 py-3 font-medium">地点</th>
-                <th className="px-4 py-3 font-medium">状态</th>
-                <th className="px-4 py-3 font-medium">阈值</th>
-                <th className="px-4 py-3 font-medium">创建于</th>
-                <th className="px-4 py-3 text-right font-medium">操作</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-200">
-              {rows.map((job) => (
-                <tr key={job.id} className="hover:bg-slate-50/70">
-                  <td className="px-4 py-3">
-                    <Link
-                      href={`/admin/jobs/${job.id}`}
-                      className="font-medium text-slate-900 hover:text-brand-600"
-                    >
-                      {job.title}
-                    </Link>
-                  </td>
-                  <td className="px-4 py-3 text-slate-600">
-                    {job.department || "—"}
-                  </td>
-                  <td className="px-4 py-3 text-slate-600">
-                    {job.location || "—"}
-                  </td>
-                  <td className="px-4 py-3">
-                    <StatusBadge status={job.status} />
-                  </td>
-                  <td className="px-4 py-3 tabular-nums text-slate-600">
-                    {job.pushThreshold}
-                  </td>
-                  <td className="px-4 py-3 text-xs text-slate-500">
-                    {formatDateTime(job.createdAt)}
-                  </td>
-                  <td className="px-4 py-3">
-                    <JobStatusActions jobId={job.id} status={job.status} />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </Card>
+        <>
+          {/* 移动端：卡片 */}
+          <div className="space-y-3 md:hidden">
+            {rows.map((job) => (
+              <div
+                key={job.id}
+                className="rounded-xl border border-slate-200 bg-white p-4"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <Link
+                    href={`/admin/jobs/${job.id}`}
+                    className="min-w-0 flex-1 font-medium text-slate-900 hover:text-brand-600"
+                  >
+                    {job.title}
+                  </Link>
+                  <StatusBadge status={job.status} />
+                </div>
+                <div className="mt-2 text-xs text-slate-500">
+                  {job.department || "—"} · {job.location || "不限"} · 阈值{" "}
+                  {job.pushThreshold}
+                </div>
+                <div className="mt-1 text-xs text-slate-400">
+                  {formatDateTime(job.createdAt)}
+                </div>
+                <div className="mt-3">
+                  <JobStatusActions jobId={job.id} status={job.status} />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* 桌面：表格 */}
+          <Card className="hidden overflow-hidden md:block">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+                  <tr>
+                    <th className="px-4 py-3 font-medium">标题</th>
+                    <th className="px-4 py-3 font-medium">部门</th>
+                    <th className="px-4 py-3 font-medium">地点</th>
+                    <th className="px-4 py-3 font-medium">状态</th>
+                    <th className="px-4 py-3 font-medium">阈值</th>
+                    <th className="px-4 py-3 font-medium">创建于</th>
+                    <th className="px-4 py-3 text-right font-medium">操作</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200">
+                  {rows.map((job) => (
+                    <tr key={job.id} className="hover:bg-slate-50/70">
+                      <td className="px-4 py-3">
+                        <Link
+                          href={`/admin/jobs/${job.id}`}
+                          className="font-medium text-slate-900 hover:text-brand-600"
+                        >
+                          {job.title}
+                        </Link>
+                      </td>
+                      <td className="px-4 py-3 text-slate-600">
+                        {job.department || "—"}
+                      </td>
+                      <td className="px-4 py-3 text-slate-600">
+                        {job.location || "—"}
+                      </td>
+                      <td className="px-4 py-3">
+                        <StatusBadge status={job.status} />
+                      </td>
+                      <td className="px-4 py-3 tabular-nums text-slate-600">
+                        {job.pushThreshold}
+                      </td>
+                      <td className="px-4 py-3 text-xs text-slate-500">
+                        {formatDateTime(job.createdAt)}
+                      </td>
+                      <td className="px-4 py-3">
+                        <JobStatusActions jobId={job.id} status={job.status} />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        </>
       )}
     </div>
   );

@@ -1,8 +1,10 @@
 import { desc, eq } from "drizzle-orm";
+import { Briefcase } from "lucide-react";
 import { db } from "@/lib/db/client";
 import { jobs } from "@/lib/db/schema";
 import { JobCard } from "@/features/jobs";
 import { CandidateNav } from "@/features/layout/candidate-nav";
+import { EmptyState } from "@/components/ui/empty-state";
 
 export const dynamic = "force-dynamic";
 
@@ -25,9 +27,11 @@ export default async function JobsPage() {
         </div>
 
         {rows.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-slate-300 bg-white p-10 text-center text-sm text-slate-500">
-            暂无在招岗位。
-          </div>
+          <EmptyState
+            icon={<Briefcase className="h-5 w-5" />}
+            title="暂无在招岗位"
+            description="我们正在整理新一轮招聘需求，敬请期待。"
+          />
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {rows.map((j) => (

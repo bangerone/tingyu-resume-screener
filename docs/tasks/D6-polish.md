@@ -1,6 +1,6 @@
 # D6 — 体验打磨 + 1-2 个亮点
 
-## Status: ⏳ Pending
+## Status: ✅ Done
 
 ## Goal
 让产品在演示视频里看起来"真的能用"，不是粗糙 demo。
@@ -34,11 +34,43 @@
 4. 在新建/详情等关键路径录 GIF 自检
 
 ## Acceptance
-- [ ] 任意页面空数据状态都不是白屏
-- [ ] 所有异步操作都有 loading + toast 反馈
-- [ ] 在 iPhone safari size 测试主流程能完成
-- [ ] 至少完成 1 个加分项
-- [ ] `npm run build` 0 error 0 warning（warning 可酌情豁免）
+- [x] 任意页面空数据状态都不是白屏（统一 `EmptyState` 组件替换 5 处）
+- [x] 所有异步操作都有 loading + toast 反馈（自研 Toaster + 全局 `loading.tsx` + `error.tsx` + `not-found.tsx`）
+- [x] 在 iPhone safari size 测试主流程能完成（`preview_resize mobile` 下 nav 汉堡 + admin 表格变卡片）
+- [x] 至少完成 1 个加分项（完成 2 个：⭐⭐⭐ JD→criteria 一键生成 + ⭐⭐ 评分 5 维度雷达图）
+- [x] `npm run build` 0 error 0 warning（mysql2 sslaccept 是 D1 以来的存量 warning，豁免）
+
+## 实际交付
+
+### 必做全绿
+- `src/components/ui/skeleton.tsx`（shimmer 骨架 + 表格行/卡片网格辅助）
+- `src/components/ui/empty-state.tsx`（统一空态：icon + title + description + action）
+- 全局 loading/error/not-found：`src/app/(loading|error|not-found).tsx` + `src/app/admin/*.tsx` + `src/app/admin/applications/[id]/loading.tsx` + `src/app/admin/jobs/[id]/loading.tsx` + `src/app/jobs/loading.tsx` + `src/app/my-applications/loading.tsx`
+- 候选人/HR nav 移动端汉堡折叠：`src/features/layout/candidate-nav.tsx` + `src/app/admin/_nav.tsx`
+- admin 表格 md 断点 → 卡片布局：`src/app/admin/jobs/page.tsx` + `src/app/admin/applications/page.tsx` + `src/app/my-applications/page.tsx`
+- `/applied/[id]` 勾勾动画（SVG stroke-dasharray + tailwind keyframes，无新依赖）：`src/app/applied/[id]/_success-check.tsx` + `tailwind.config.ts`（加 `check-draw` / `pop-in` / `fade-up` / `shimmer` keyframes，补齐 brand 200/300/400/800/900）
+- CriteriaEditor 常用标签 preset chips（学历/年限/地点/技能/加分）：`src/features/jobs/criteria-editor.tsx`
+
+### 加分 ⭐⭐⭐ JD → criteria 一键生成
+- Prompt 设计：`docs/prompt-criteria-gen.md`
+- LLM 调用：`src/lib/ai/criteria-generator.ts`（复用 `provider.ts`，zod 校验复用 `job-schema.ts` 的 `screeningCriteriaSchema`，2 次重试）
+- API：`src/app/api/jobs/generate-criteria/route.ts`（HR 守卫）
+- UI：`src/features/jobs/jd-to-criteria.tsx`（折叠卡片，JD 最多 2000 字）
+- 合并策略：生成结果**追加**而非覆盖，按 `kind+label / skill name / bonus 字面量 / custom name` 去重，HR 手填的不会被冲掉。
+
+### 加分 ⭐⭐ 评分 5 维度雷达图
+- 依赖：`recharts ^3.8.1`
+- 组件：`src/features/scoring/score-radar.tsx`
+- 维度：硬性通过率 / 技能匹配率 / 经验分 / 加分命中 / 自定义均分，全部归一化到 0-100
+- 嵌入位置：`admin/applications/[id]` 评估结论卡下方（只在 `app.score` 存在时渲染）
+
+### 路由一览（新增）
+- `POST /api/jobs/generate-criteria` — HR 专属
+
+### 验收日志
+- `npx tsc --noEmit` → exit 0
+- `npm run build` → 26 routes compiled successfully
+- UI 走查：`preview_eval` 在 desktop + mobile 两个 viewport 下过首页 / 详情 / 我的投递 / admin 岗位 / admin 候选人池 / 新建岗位 / not-found，无 console.error
 
 ## Out of scope
 - 不要重构数据模型

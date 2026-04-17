@@ -5,9 +5,11 @@
 // ============================================================
 // 由 JobForm 内嵌；通过 react-hook-form 的 useFieldArray 管理四个列表。
 // 输出形状符合 ScreeningCriteria (见 src/types/index.ts)。
+//
+// D6：新增「常用标签库」快捷按钮 —— 一键追加常见学历/年限/技能/加分项。
 // ============================================================
 
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Sparkles } from "lucide-react";
 import {
   useFieldArray,
   type Control,
@@ -26,6 +28,54 @@ interface Props {
   register: UseFormRegister<JobInput>;
   errors: FieldErrors<JobInput>;
 }
+
+// ---------- preset 标签库 ----------
+
+const HARD_PRESETS: {
+  label: string;
+  kind: "education" | "min_years" | "location";
+  value: string | number;
+  display: string;
+}[] = [
+  { label: "本科及以上", kind: "education", value: "本科", display: "本科" },
+  { label: "硕士及以上", kind: "education", value: "硕士", display: "硕士" },
+  { label: "大专及以上", kind: "education", value: "大专", display: "大专" },
+  { label: "1 年以上经验", kind: "min_years", value: 1, display: "1 年+" },
+  { label: "3 年以上经验", kind: "min_years", value: 3, display: "3 年+" },
+  { label: "5 年以上经验", kind: "min_years", value: 5, display: "5 年+" },
+  { label: "坐标上海", kind: "location", value: "上海", display: "上海" },
+  { label: "坐标北京", kind: "location", value: "北京", display: "北京" },
+  { label: "坐标杭州", kind: "location", value: "杭州", display: "杭州" },
+  { label: "坐标深圳", kind: "location", value: "深圳", display: "深圳" },
+];
+
+const SKILL_PRESETS = [
+  "React",
+  "TypeScript",
+  "Next.js",
+  "Vue",
+  "Node.js",
+  "Python",
+  "Java",
+  "Go",
+  "SQL",
+  "MySQL",
+  "Redis",
+  "Docker",
+  "Kubernetes",
+  "AI/LLM",
+  "数据分析",
+];
+
+const BONUS_PRESETS = [
+  "有大厂经验",
+  "有技术博客",
+  "有开源贡献",
+  "有竞赛获奖",
+  "有独立作品",
+];
+
+// ---------- 主组件 ----------
 
 export function CriteriaEditor({ control, register, errors }: Props) {
   return (
@@ -50,14 +100,26 @@ function HardList({ control, register, errors }: Props) {
     <Section
       title="硬性要求"
       hint="不满足直接判负。常见如学历、最低年限、地点。"
-      onAdd={() =>
-        append({ kind: "education", label: "", value: "" })
+      onAdd={() => append({ kind: "education", label: "", value: "" })}
+      presets={
+        <PresetBar>
+          {HARD_PRESETS.map((p) => (
+            <PresetChip
+              key={p.label}
+              onClick={() =>
+                append({ kind: p.kind, label: p.label, value: p.value })
+              }
+            >
+              {p.display}
+            </PresetChip>
+          ))}
+        </PresetBar>
       }
     >
       {fields.length === 0 && <Empty text="暂无硬性要求" />}
       {fields.map((f, i) => (
         <Row key={f.id} onRemove={() => remove(i)}>
-          <div className="col-span-3">
+          <div className="col-span-12 md:col-span-3">
             <Label className="text-xs text-slate-500">类别</Label>
             <Select {...register(`criteria.hard.${i}.kind` as const)}>
               <option value="education">学历</option>
@@ -66,7 +128,7 @@ function HardList({ control, register, errors }: Props) {
               <option value="custom">自定义</option>
             </Select>
           </div>
-          <div className="col-span-4">
+          <div className="col-span-12 md:col-span-4">
             <Label className="text-xs text-slate-500">说明</Label>
             <Input
               placeholder="如：本科及以上"
@@ -74,7 +136,7 @@ function HardList({ control, register, errors }: Props) {
             />
             <FieldError msg={errors.criteria?.hard?.[i]?.label?.message} />
           </div>
-          <div className="col-span-4">
+          <div className="col-span-12 md:col-span-5">
             <Label className="text-xs text-slate-500">值</Label>
             <Input
               placeholder="如：本科 / 3 / 上海"
@@ -100,14 +162,26 @@ function SkillList({ control, register, errors }: Props) {
     <Section
       title="必备 & 加分技能"
       hint="weight 1-5，level=must 视为硬性，不满足判负。"
-      onAdd={() =>
-        append({ name: "", weight: 3, level: "preferred" })
+      onAdd={() => append({ name: "", weight: 3, level: "preferred" })}
+      presets={
+        <PresetBar>
+          {SKILL_PRESETS.map((name) => (
+            <PresetChip
+              key={name}
+              onClick={() =>
+                append({ name, weight: 3, level: "preferred" })
+              }
+            >
+              {name}
+            </PresetChip>
+          ))}
+        </PresetBar>
       }
     >
       {fields.length === 0 && <Empty text="暂无技能要求" />}
       {fields.map((f, i) => (
         <Row key={f.id} onRemove={() => remove(i)}>
-          <div className="col-span-5">
+          <div className="col-span-12 md:col-span-6">
             <Label className="text-xs text-slate-500">技能</Label>
             <Input
               placeholder="如：React / Python / 数据分析"
@@ -115,7 +189,7 @@ function SkillList({ control, register, errors }: Props) {
             />
             <FieldError msg={errors.criteria?.skills?.[i]?.name?.message} />
           </div>
-          <div className="col-span-3">
+          <div className="col-span-6 md:col-span-3">
             <Label className="text-xs text-slate-500">权重</Label>
             <Select
               {...register(`criteria.skills.${i}.weight` as const, {
@@ -129,7 +203,7 @@ function SkillList({ control, register, errors }: Props) {
               <option value={5}>5 · 关键</option>
             </Select>
           </div>
-          <div className="col-span-3">
+          <div className="col-span-6 md:col-span-3">
             <Label className="text-xs text-slate-500">级别</Label>
             <Select {...register(`criteria.skills.${i}.level` as const)}>
               <option value="preferred">加分</option>
@@ -160,6 +234,15 @@ function BonusList({
       title="加分项"
       hint="一行一条，自由文本。如：有大厂经验加分。"
       onAdd={() => append("" as never)}
+      presets={
+        <PresetBar>
+          {BONUS_PRESETS.map((b) => (
+            <PresetChip key={b} onClick={() => append(b as never)}>
+              {b}
+            </PresetChip>
+          ))}
+        </PresetBar>
+      }
     >
       {fields.length === 0 && <Empty text="暂无加分项" />}
       {fields.map((f, i) => (
@@ -188,14 +271,12 @@ function CustomList({ control, register, errors }: Props) {
     <Section
       title="自定义维度"
       hint="HR 自定义的考察维度，AI 会按 description 打分 0-100。"
-      onAdd={() =>
-        append({ name: "", weight: 3, description: "" })
-      }
+      onAdd={() => append({ name: "", weight: 3, description: "" })}
     >
       {fields.length === 0 && <Empty text="暂无自定义维度" />}
       {fields.map((f, i) => (
         <Row key={f.id} onRemove={() => remove(i)}>
-          <div className="col-span-5">
+          <div className="col-span-12 md:col-span-5">
             <Label className="text-xs text-slate-500">名称</Label>
             <Input
               placeholder="如：文化契合度"
@@ -205,7 +286,7 @@ function CustomList({ control, register, errors }: Props) {
               msg={errors.criteria?.custom?.[i]?.name?.message}
             />
           </div>
-          <div className="col-span-2">
+          <div className="col-span-6 md:col-span-2">
             <Label className="text-xs text-slate-500">权重</Label>
             <Select
               {...register(`criteria.custom.${i}.weight` as const, {
@@ -219,7 +300,7 @@ function CustomList({ control, register, errors }: Props) {
               <option value={5}>5</option>
             </Select>
           </div>
-          <div className="col-span-5">
+          <div className="col-span-12 md:col-span-5">
             <Label className="text-xs text-slate-500">描述</Label>
             <Textarea
               rows={2}
@@ -239,16 +320,18 @@ function Section({
   title,
   hint,
   onAdd,
+  presets,
   children,
 }: {
   title: string;
   hint?: string;
   onAdd: () => void;
+  presets?: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
     <div className="rounded-lg border border-slate-200 bg-slate-50/50 p-4">
-      <div className="mb-3 flex items-center justify-between">
+      <div className="mb-3 flex items-start justify-between gap-3">
         <div>
           <h3 className="text-sm font-semibold text-slate-900">{title}</h3>
           {hint && <p className="mt-0.5 text-xs text-slate-500">{hint}</p>}
@@ -257,8 +340,38 @@ function Section({
           <Plus className="h-4 w-4" /> 添加
         </Button>
       </div>
+      {presets && (
+        <div className="mb-3">
+          <div className="mb-1.5 flex items-center gap-1 text-xs text-slate-500">
+            <Sparkles className="h-3 w-3" /> 常用标签（点击一键添加）
+          </div>
+          {presets}
+        </div>
+      )}
       <div className="space-y-3">{children}</div>
     </div>
+  );
+}
+
+function PresetBar({ children }: { children: React.ReactNode }) {
+  return <div className="flex flex-wrap gap-1.5">{children}</div>;
+}
+
+function PresetChip({
+  children,
+  onClick,
+}: {
+  children: React.ReactNode;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs text-slate-700 transition hover:border-brand-400 hover:bg-brand-50 hover:text-brand-700"
+    >
+      + {children}
+    </button>
   );
 }
 
