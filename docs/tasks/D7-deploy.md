@@ -1,6 +1,29 @@
 # D7 — 部署 + 录屏 + 提交材料
 
-## Status: ⏳ Pending
+## Status: ✅ Done（部署环节放弃，改走录屏 + PPT）
+
+## 实际路径
+
+部署评估结果：
+- **EdgeOne Pages**（计划 A）：Next preset 走 Cloudflare 风格 Edge runtime adapter，不兼容 `pdf-parse` / `mammoth`（Node-only）。构建日志 `No server-handler detected, generating routes.json for pure project` → `Build error`。
+- **Vercel**：DNS 级被墙，国内无法访问，面试官体验会断。
+- **Zeabur**：2024 年转型为服务器 reselling 平台，不再提供免费 serverless 部署，需要额外买节点。
+- **腾讯云轻量应用服务器**：技术上可行，需额外 SSH + pm2 + 反代配置；时间成本 45-60 分钟。
+- **本地电脑 + 内网穿透**：免费但需演示期电脑保持在线。
+
+最终决定：**不部署在线 demo，以录屏 + PPT 形式提交**。代码仓库已 push 到 public GitHub，面试官可本地 clone 跑完整产品。
+
+## 实际交付
+
+- ✅ 代码仓库：https://github.com/bangerone/tingyu-resume-screener（public，commit 历史干净）
+- ✅ 设计文档（Markdown）：`docs/submission.md`
+- ✅ 设计 PPT：`docs/presentation.pptx`（16 页，pptxgenjs 生成，脚本 `scripts/build-pptx.mjs`）
+- ✅ 面试官导览：`docs/interviewer-guide.md`（改成本地跑指南）
+- ⬜ 演示视频 `docs/demo.mp4`（5 分钟，按作者提供的录屏脚本录制）
+
+---
+
+## 原计划（部署路线，已废弃）
 
 ## Goal
 交付：在线 demo 链接（**腾讯云 EdgeOne Pages**）+ 设计文档 + 演示视频。

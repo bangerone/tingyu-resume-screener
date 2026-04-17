@@ -1,9 +1,9 @@
 # 庭宇 · 智能简历筛选系统 · 设计要点
 
-> 面试作业提交文档 · 1 周 vibe-coding · 作者：[Your Name]
+> 面试作业提交文档 · 1 周 vibe-coding
 >
-> 在线 demo：`https://<YOUR-DOMAIN>/welcome?k=tingyu-0421` · HR 密码：`demo123456`
-> 演示视频：`./docs/demo.mp4` · 代码：`https://github.com/bangerone/tingyu-resume-screener`
+> 演示视频 `docs/demo.mp4` · PPT `docs/presentation.pptx`
+> 代码 https://github.com/bangerone/tingyu-resume-screener · HR 密码 `demo123456`（本地）
 
 ## 1. 产品定位（一句话）
 
@@ -121,9 +121,9 @@ feishu_logs (id, application_id, job_id, ok, response, created_at)
 - **样式**：Tailwind + 手写 shadcn/ui（Button/Input/Card/Alert/Toast/EmptyState/Skeleton），无 UI 库依赖
 - **表单**：react-hook-form + zod
 - **状态**：Server Components 为主，客户端只在需要交互的 island
-- **部署**：EdgeOne Pages（国内 CDN，类 Vercel 体验，免备案 `.edgeone.app`）
-- **CI/CD**：GitHub push → EdgeOne 自动构建（5-10 分钟）
-- **监控**：D7 暂用 EdgeOne Functions Logs；生产建议接 Sentry
+- **部署**：本地演示（原计划 EdgeOne Pages；因 `pdf-parse` / `mammoth` 依赖 Node runtime 不兼容 EdgeOne 的 Edge runtime，权衡后改走录屏 + PPT 形式提交）
+- **CI/CD**：GitHub 作为代码归档；部署层评估了 Vercel（国内不可达）/ Zeabur（已转型收费）/ 腾讯云轻量（时间成本高）三条路径
+- **监控**：生产建议接 Sentry；当前不涉及
 
 ## 9. 时间线（1 周 vibe-coding，实际 6 天 + 1 天打磨）
 
@@ -137,7 +137,7 @@ feishu_logs (id, application_id, job_id, ok, response, created_at)
 | D5 | HR 候选人池 + 飞书推送 | ✅ |
 | D6 | 体验打磨（loading/error/empty/toast + 雷达图 + JD→criteria 一键生成） | ✅ |
 | D6.5 | 演示加固（访问码门禁 + HR 只读 + 限额） | ✅ |
-| D7 | EdgeOne 部署 + 录屏 + 本文档 | ✅ |
+| D7 | 部署尝试 → 改为录屏 · 设计文档（本文 + PPT） | ✅ |
 
 ---
 
