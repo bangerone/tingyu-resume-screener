@@ -1,0 +1,48 @@
+{
+  "name": "赵子墨",
+  "email": "zimo.zhao@example.com",
+  "phone": "13622223333",
+  "location": "上海",
+  "total_years": 4,
+  "education": [
+    {
+      "school": "华东理工大学",
+      "degree": "本科",
+      "major": "信息工程",
+      "period": "2016-09 ~ 2020-06"
+    }
+  ],
+  "experience": [
+    {
+      "company": "某中厂 SaaS 公司",
+      "title": "Java 后端工程师",
+      "period": "2020-07 ~ 2023-06",
+      "summary": "Spring Boot 微服务，订单履约链路主力开发。MySQL + Redis + Kafka。"
+    },
+    {
+      "company": "当前公司",
+      "title": "全栈工程师",
+      "period": "2023-07 ~ 至今",
+      "summary": "后台用 Node.js + Express，前端用 Vue 3 做管理后台。偶尔帮忙写一点 React 小工具。"
+    }
+  ],
+  "skills": [
+    "JavaScript",
+    "Vue 3",
+    "React",
+    "Node.js",
+    "Express",
+    "Java",
+    "Spring Boot",
+    "MySQL",
+    "Redis"
+  ],
+  "projects": [
+    {
+      "name": "内部运营后台",
+      "role": "全栈",
+      "summary": "Vue 3 + Node.js，CRUD + 简单报表。"
+    }
+  ],
+  "raw_text": "赵子墨 · 本科 · 4 年经验 · Java 后端主力，近 1 年全栈 · React 经验较浅"
+}

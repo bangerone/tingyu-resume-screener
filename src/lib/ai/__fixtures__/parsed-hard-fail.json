@@ -1,0 +1,32 @@
+{
+  "name": "林小雨",
+  "email": "xiaoyu.lin@example.com",
+  "phone": "13911110001",
+  "location": "合肥",
+  "total_years": 0.5,
+  "education": [
+    {
+      "school": "安徽某职业技术学院",
+      "degree": "大专",
+      "major": "计算机应用",
+      "period": "2021-09 ~ 2024-06"
+    }
+  ],
+  "experience": [
+    {
+      "company": "某本地外包",
+      "title": "实习前端",
+      "period": "2024-07 ~ 2025-01",
+      "summary": "切 HTML 页面，跟着师父做后台 CRUD 页面，用 Vue 2 + Element UI。"
+    }
+  ],
+  "skills": ["HTML", "CSS", "Vue 2", "Element UI", "jQuery"],
+  "projects": [
+    {
+      "name": "企业展示官网",
+      "role": "切图",
+      "summary": "10 个静态页面，响应式。"
+    }
+  ],
+  "raw_text": "林小雨 · 大专 · 0.5 年经验 · Vue 2 / jQuery · 合肥 · 无 React 经验"
+}

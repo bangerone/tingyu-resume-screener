@@ -1,6 +1,6 @@
 # D4 — AI 简历解析 + 评分（双端到端打通）
 
-## Status: ⏳ Pending
+## Status: ✅ Done
 
 ## Goal
 1. **移除 D3 的 mock**：`/api/resume/parse` 用真实 LLM 跑通
@@ -56,14 +56,20 @@
 9. 端到端：真机投递一份简历，观察 TiDB 里 parsed_resume + score 都是合法 JSON
 
 ## Acceptance
-- [ ] D3 投递流程现在用真实 AI 解析填表（不再 mock）
-- [ ] 投递成功后 60s 内 `applications` 行的 `score` 字段有 ScoreResult JSON
-- [ ] `score.total` 在 0-100，breakdown 各维度完整
-- [ ] `passed_hard=false` 时 `total ≤ 49`
-- [ ] fixture 测试：强候选人 ≥80、硬性不过 ≤49、部分匹配 30-70
-- [ ] 乱码文件 / 空 PDF → status=`failed`, fail_reason 有内容
-- [ ] 重跑 POST `/api/score/[id]` → 覆盖更新不重复插入
-- [ ] `npm run build` 0 error
+- [x] D3 投递流程现在用真实 AI 解析填表（不再 mock）—— /api/resume/parse 已换成 COS download → pdf-parse/mammoth → LLM，mock 代码完全移除
+- [x] 投递成功后 60s 内 `applications` 行的 `score` 字段有 ScoreResult JSON —— E2E 实测：上传 docx 简历 → 自动解析 → 投递 → fire-and-forget 触发评分，<30s 内 `status=scored, total=85`
+- [x] `score.total` 在 0-100，breakdown 各维度完整（hard/skills/experience/bonus/custom）
+- [x] `passed_hard=false` 时 `total ≤ 49` —— clamp 逻辑在 scorer.ts 实测：hard-fail fixture total=0, partial fixture total=45
+- [x] fixture 测试：强候选人 85（≥80）、硬性不过 0（≤49）、部分匹配 45（30-70）
+- [x] 乱码文件 / 空 PDF → 400 错误 + 明确文案（上传乱码 bytes 实测返回 `Invalid PDF structure`）；LLM 评分异常 → status=`failed`, fail_reason 有内容（earlier 402 case 实测 fail_reason="score: 402 Insufficient Balance"）
+- [x] 重跑 POST `/api/score/[id]` → 覆盖更新不重复插入（DB rowcount 稳定 1 行）
+- [x] `npm run build` 0 error
+
+## Notes
+- **AI provider**：DeepSeek 账户余额不足，切到 **智谱 GLM-4-Flash**（免费 100 万 tokens/天），通过 `AI_API_KEY / AI_BASE_URL / AI_MODEL_PARSE / AI_MODEL_SCORE` env 覆盖，代码无需改。
+- **pdf-parse 坑**：默认 `require('pdf-parse')` 会在 import 时读磁盘 demo 文件触发 ENOENT，统一改用 `pdf-parse/lib/pdf-parse.js` 子模块，配套加了 `src/types/pdf-parse-lib.d.ts`。
+- **Fire-and-forget**：`/api/applications` 成功后不 await 地 fetch `/api/score/[id]` 带 `x-internal-score-token` 头（值 = `INTERNAL_SCORE_TOKEN ?? JWT_SECRET`），score route 双鉴权（internal token 或 HR session）。
+- **验证脚本**（非核心交付）：`scripts/upload-demo-docx.mjs` / `scripts/upload-garbage.mjs` 用来验证 happy/fail path，可 D7 之前删除或保留作 demo。
 
 ## Out of scope
 - 不做飞书推送（D5）

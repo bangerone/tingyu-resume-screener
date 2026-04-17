@@ -1,0 +1,60 @@
+{
+  "name": "陈思齐",
+  "email": "siqi.chen@example.com",
+  "phone": "13800008000",
+  "location": "上海",
+  "total_years": 6,
+  "education": [
+    {
+      "school": "上海交通大学",
+      "degree": "硕士",
+      "major": "计算机科学与技术",
+      "period": "2016-09 ~ 2019-06"
+    },
+    {
+      "school": "上海交通大学",
+      "degree": "本科",
+      "major": "软件工程",
+      "period": "2012-09 ~ 2016-06"
+    }
+  ],
+  "experience": [
+    {
+      "company": "字节跳动",
+      "title": "高级前端工程师",
+      "period": "2019-07 ~ 2022-10",
+      "summary": "抖音电商商家中心前端负责人，主导从 Webpack 迁移到 Vite，冷启动 35s → 6s；落地 Monorepo + pnpm workspace，统一 5 条业务线。带 4 人小组。"
+    },
+    {
+      "company": "美团",
+      "title": "技术专家 / 前端 Tech Lead",
+      "period": "2022-11 ~ 至今",
+      "summary": "外卖运营平台技术负责人，搭建微前端 + Server Components 架构，首屏 LCP 2.1s → 0.9s。主导 TypeScript 严格模式 + 自研 ESLint 规则集落地，覆盖 200+ 前端仓库。"
+    }
+  ],
+  "skills": [
+    "TypeScript",
+    "React",
+    "Next.js",
+    "Node.js",
+    "Vite",
+    "Monorepo",
+    "Server Components",
+    "性能优化",
+    "微前端",
+    "CI/CD"
+  ],
+  "projects": [
+    {
+      "name": "抖音电商商家中心重构",
+      "role": "前端负责人",
+      "summary": "首屏性能优化 60%，构建时间下降 70%。"
+    },
+    {
+      "name": "美团外卖运营平台 v3",
+      "role": "Tech Lead",
+      "summary": "微前端拆分，独立部署到 8 条业务线。"
+    }
+  ],
+  "raw_text": "陈思齐 · 6 年前端 · 上海交大硕士 · 字节/美团 · React/Next.js/TypeScript"
+}

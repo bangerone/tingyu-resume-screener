@@ -98,8 +98,34 @@ export async function POST(req: NextRequest) {
     status: "received",
   });
 
-  // D4 将接入 fire-and-forget 评分；D3 只写 received。
+  // Fire-and-forget：触发后台评分。不 await，不阻塞响应。
+  triggerScore(id);
+
   return NextResponse.json({ id }, { status: 201 });
+}
+
+function triggerScore(applicationId: string) {
+  const base = process.env.APP_BASE_URL ?? "http://localhost:3000";
+  const token =
+    process.env.INTERNAL_SCORE_TOKEN ?? process.env.JWT_SECRET ?? "";
+  // 注意：不 await，错误只打日志；score route 内部会处理失败 → status=failed
+  fetch(`${base}/api/score/${applicationId}`, {
+    method: "POST",
+    headers: { "x-internal-score-token": token },
+  })
+    .then((r) => {
+      if (!r.ok) {
+        console.warn(
+          `[applications] score trigger for ${applicationId} returned ${r.status}`,
+        );
+      }
+    })
+    .catch((err) => {
+      console.warn(
+        `[applications] score trigger for ${applicationId} failed:`,
+        err,
+      );
+    });
 }
 
 export async function GET() {

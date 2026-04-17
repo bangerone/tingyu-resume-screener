@@ -4,115 +4,28 @@
 // 入参：{ fileKey }
 // 出参：{ parsedResume: ParsedResume }
 //
-// D3 行为：mock 返回固定 ParsedResume（稍微按 fileKey 派生点差异，让体验真实些）
-// D4 会替换为：COS download → pdf-parse/mammoth → LLM Call #1 → 真 JSON
+// 流程：
+//   1. 校验候选人 session
+//   2. 校验 fileKey 在候选人自己目录下
+//   3. COS download → Buffer
+//   4. extractTextFromBuffer
+//   5. parseResume (LLM Call #1)
+//   6. 返回结构化 JSON，供前端 autofill
 // ============================================================
 
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { getCandidateSession } from "@/lib/auth/candidate";
-import type { ParsedResume } from "@/types";
+import { downloadResume } from "@/lib/storage/cos";
+import { extractTextFromBuffer } from "@/lib/ai/extract";
+import { parseResume, AiParseError } from "@/lib/ai/parser";
 
 export const runtime = "nodejs";
-export const maxDuration = 30;
+export const maxDuration = 60;
 
 const BodySchema = z.object({
   fileKey: z.string().min(1),
 });
-
-function mockParse(candidateEmail: string, fileKey: string): ParsedResume {
-  // mock 的稳定性：根据 fileKey 选一条示例（hash mod 2）
-  const hash = [...fileKey].reduce((s, c) => (s + c.charCodeAt(0)) | 0, 0);
-  const variant = Math.abs(hash) % 2;
-
-  if (variant === 0) {
-    return {
-      name: "张三",
-      email: candidateEmail,
-      phone: "13800138000",
-      location: "上海",
-      total_years: 4,
-      education: [
-        {
-          school: "复旦大学",
-          degree: "本科",
-          major: "计算机科学与技术",
-          period: "2017-09 ~ 2021-07",
-        },
-      ],
-      experience: [
-        {
-          company: "字节跳动",
-          title: "前端工程师",
-          period: "2021-08 ~ 2024-03",
-          summary:
-            "主导抖音电商 B 端中后台从 Webpack 迁移 Vite，冷启动从 35s 降至 6s；负责商品列表虚拟化，支撑 10w+ SKU。",
-        },
-        {
-          company: "美团",
-          title: "高级前端工程师",
-          period: "2024-04 ~ 至今",
-          summary:
-            "外卖运营平台技术负责人，搭建 Monorepo + 微前端架构，统一 8 条业务线构建和发布。",
-        },
-      ],
-      skills: [
-        "TypeScript",
-        "React",
-        "Next.js",
-        "Node.js",
-        "Vite",
-        "Monorepo",
-        "性能优化",
-      ],
-      projects: [
-        {
-          name: "抖音电商商家中心",
-          role: "前端主力",
-          summary:
-            "负责商家侧数据看板和订单管理模块重构，首屏性能优化 60%。",
-        },
-      ],
-      raw_text:
-        "张三 · 前端工程师\\n复旦大学 计算机科学与技术 · 2017-2021\\n字节跳动 / 美团 · 4 年前端经验\\nTypeScript · React · Next.js · Node.js · Vite",
-    };
-  }
-
-  return {
-    name: "李四",
-    email: candidateEmail,
-    phone: "13900139000",
-    location: "北京",
-    total_years: 2,
-    education: [
-      {
-        school: "北京邮电大学",
-        degree: "硕士",
-        major: "软件工程",
-        period: "2020-09 ~ 2023-06",
-      },
-    ],
-    experience: [
-      {
-        company: "小红书",
-        title: "前端开发工程师",
-        period: "2023-07 ~ 至今",
-        summary:
-          "负责笔记详情页前端开发，主导滑动播放器改造，CTR +3%。",
-      },
-    ],
-    skills: ["JavaScript", "React", "CSS", "Node.js", "Webpack"],
-    projects: [
-      {
-        name: "笔记滑动播放器",
-        role: "核心开发",
-        summary: "纯 CSS + IntersectionObserver 实现，零三方库依赖。",
-      },
-    ],
-    raw_text:
-      "李四 · 前端工程师 · 2 年经验\\n北邮软件工程硕士 · 小红书在职\\nJavaScript / React / Webpack",
-  };
-}
 
 export async function POST(req: NextRequest) {
   const session = await getCandidateSession();
@@ -134,17 +47,56 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // 简单的 path 防越权：fileKey 必须在候选人自己目录下
-  if (!parsed.data.fileKey.startsWith(`resumes/${session.sub}/`)) {
+  const { fileKey } = parsed.data;
+  if (!fileKey.startsWith(`resumes/${session.sub}/`)) {
     return NextResponse.json(
       { error: "fileKey 与当前候选人不匹配" },
       { status: 403 },
     );
   }
 
-  // mock 延迟 800ms，体验上有 loading 感但不拖沓
-  await new Promise((r) => setTimeout(r, 800));
+  // 1. 下载
+  let buf: Buffer;
+  try {
+    buf = await downloadResume(fileKey);
+  } catch (e) {
+    console.error("[resume/parse] COS download failed", e);
+    return NextResponse.json(
+      { error: "无法读取简历文件，请重新上传" },
+      { status: 502 },
+    );
+  }
 
-  const parsedResume = mockParse(session.email ?? "", parsed.data.fileKey);
-  return NextResponse.json({ parsedResume, mock: true });
+  // 2. 抽取文本
+  let text: string;
+  try {
+    text = await extractTextFromBuffer(buf, fileKey);
+  } catch (e) {
+    const msg =
+      e instanceof Error ? e.message : "简历文本抽取失败，请换一份 PDF/DOCX";
+    return NextResponse.json({ error: msg }, { status: 400 });
+  }
+
+  // 3. LLM 结构化
+  try {
+    const parsedResume = await parseResume(text);
+    // 回填候选人的登录邮箱（LLM 可能漏填或认错）
+    if (!parsedResume.email && session.email) {
+      parsedResume.email = session.email;
+    }
+    return NextResponse.json({ parsedResume });
+  } catch (e) {
+    if (e instanceof AiParseError) {
+      console.error("[resume/parse] AI parse failed", e.message, e.detail);
+      return NextResponse.json(
+        { error: "AI 解析失败，请稍后重试或手动填写" },
+        { status: 502 },
+      );
+    }
+    console.error("[resume/parse] unexpected", e);
+    return NextResponse.json(
+      { error: "解析异常，请稍后重试" },
+      { status: 500 },
+    );
+  }
 }
