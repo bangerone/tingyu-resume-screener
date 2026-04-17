@@ -7,6 +7,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { randomUUID } from "crypto";
 import { and, desc, eq, gt } from "drizzle-orm";
 import { getCandidateSession } from "@/lib/auth/candidate";
+import { isHrAuthenticated } from "@/lib/auth/hr";
 import { db } from "@/lib/db/client";
 import { applications, candidates, jobs } from "@/lib/db/schema";
 import { applicationSubmitSchema } from "@/lib/validators/application";
@@ -128,7 +129,33 @@ function triggerScore(applicationId: string) {
     });
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const scope = req.nextUrl.searchParams.get("scope");
+
+  // HR 视图（/admin 侧拉全量）
+  if (scope === "admin") {
+    if (!(await isHrAuthenticated())) {
+      return NextResponse.json({ error: "未登录" }, { status: 401 });
+    }
+    const rows = await db
+      .select({
+        id: applications.id,
+        jobId: applications.jobId,
+        jobTitle: jobs.title,
+        candidateName: applications.candidateName,
+        candidateEmail: applications.candidateEmail,
+        status: applications.status,
+        score: applications.score,
+        pushedToFeishuAt: applications.pushedToFeishuAt,
+        createdAt: applications.createdAt,
+      })
+      .from(applications)
+      .leftJoin(jobs, eq(applications.jobId, jobs.id))
+      .orderBy(desc(applications.createdAt));
+    return NextResponse.json({ applications: rows });
+  }
+
+  // 候选人视图
   const session = await getCandidateSession();
   if (!session) {
     return NextResponse.json({ error: "请先登录" }, { status: 401 });

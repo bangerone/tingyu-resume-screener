@@ -13,6 +13,11 @@ const tabs = [
     label: "岗位管理",
     match: (p: string) => p.startsWith("/admin/jobs"),
   },
+  {
+    href: "/admin/applications",
+    label: "候选人池",
+    match: (p: string) => p.startsWith("/admin/applications"),
+  },
 ];
 
 export function AdminNav() {

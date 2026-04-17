@@ -24,6 +24,7 @@ import { db } from "@/lib/db/client";
 import { applications, jobs } from "@/lib/db/schema";
 import { isHrAuthenticated } from "@/lib/auth/hr";
 import { scoreResume, AiScoreError } from "@/lib/ai/scorer";
+import { pushToFeishu } from "@/features/feishu";
 
 export const runtime = "nodejs";
 export const maxDuration = 90;
@@ -105,13 +106,23 @@ export async function POST(
     // D5：若 score.passed_hard && score.total >= job.push_threshold → 飞书推送
     const willPush =
       score.passed_hard && score.total >= (job.pushThreshold ?? 80);
+    let pushed: { ok: boolean; msg: string } | null = null;
     if (willPush) {
-      console.log(
-        `[score] application ${id} eligible for feishu push (total=${score.total}, threshold=${job.pushThreshold})`,
-      );
+      try {
+        // 重新读 application（拿到最新 score 字段之外的字段；其实主要是 candidate* 字段，
+        // 它们在 insert 时就有了，这里直接用内存里的 app 就够，但为清晰起见重读一次）
+        pushed = await pushToFeishu(app, job, score);
+      } catch (e) {
+        // pushToFeishu 内部已经 catch 了，这里是兜底：绝不让 push 异常掉 score
+        console.error("[score] feishu push unexpected error", id, e);
+        pushed = {
+          ok: false,
+          msg: e instanceof Error ? e.message : "push failed",
+        };
+      }
     }
 
-    return NextResponse.json({ ok: true, score });
+    return NextResponse.json({ ok: true, score, pushed });
   } catch (e) {
     const reason =
       e instanceof AiScoreError

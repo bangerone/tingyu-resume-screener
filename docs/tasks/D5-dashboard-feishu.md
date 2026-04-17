@@ -1,6 +1,6 @@
 # D5 — HR 候选人面板 + 飞书推送
 
-## Status: ⏳ Pending
+## Status: ✅ Done
 
 ## Goal
 HR 在 `/admin/applications` 看到按分排序的候选人列表 + 评分理由详情；高分候选人自动推送飞书群。
@@ -43,13 +43,13 @@ HR 在 `/admin/applications` 看到按分排序的候选人列表 + 评分理由
 6. 在 D4 的 `/api/score/[id]` 末尾插上 `pushToFeishu` 调用（替换之前的 console.log 占位）
 
 ## Acceptance
-- [ ] 列表页按分降序展示所有 scored/pushed 应用
-- [ ] 颜色：≥85 emerald，70-84 蓝，50-69 橙，<50 红
-- [ ] 详情页能看到完整 ScoreBreakdown，简历 iframe 能加载
-- [ ] 投递一份高分简历（满足硬性 + 总分 ≥ push_threshold） → 飞书群收到 interactive card
-- [ ] 卡片"查看详情"按钮跳转正确（包含 application id）
-- [ ] `feishu_logs` 表有对应记录
-- [ ] 故意改环境变量让 webhook 错 → log ok=false，application 状态保持 `scored`（不破坏数据）
+- [x] 列表页按分降序展示所有 scored/pushed 应用
+- [x] 颜色：≥85 emerald，70-84 蓝，50-69 橙，<50 红
+- [x] 详情页能看到完整 ScoreBreakdown，简历 iframe 能加载
+- [x] 投递一份高分简历（满足硬性 + 总分 ≥ push_threshold） → 飞书群收到 interactive card
+- [x] 卡片"查看详情"按钮跳转正确（包含 application id）
+- [x] `feishu_logs` 表有对应记录
+- [x] 故意改环境变量让 webhook 错 → log ok=false，application 状态保持 `scored`（不破坏数据）
 
 ## Out of scope
 - 不做飞书审批 / 多机器人路由

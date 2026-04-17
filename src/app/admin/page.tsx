@@ -20,7 +20,7 @@ export default function AdminHomePage() {
         <CardHeader>
           <CardTitle>快速入口</CardTitle>
           <CardDescription>
-            D2 起补岗位管理，D4 起补候选人池 + 飞书推送。
+            在这里管理岗位、查看候选人评分、推送高分候选人到飞书群。
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-2 text-sm text-slate-600">
@@ -33,13 +33,11 @@ export default function AdminHomePage() {
             </Link>
           </p>
           <p>
-            冒烟状态：
             <Link
-              href="/api/dev/ping"
-              className="ml-1 text-brand-600 underline underline-offset-2"
-              target="_blank"
+              href="/admin/applications"
+              className="text-brand-600 underline underline-offset-2"
             >
-              /api/dev/ping
+              候选人池 →
             </Link>
           </p>
           <p>
