@@ -15,6 +15,9 @@
 
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
+import { eq, sql } from "drizzle-orm";
+import { db } from "@/lib/db/client";
+import { applications } from "@/lib/db/schema";
 import { getCandidateSession } from "@/lib/auth/candidate";
 import { downloadResume } from "@/lib/storage/cos";
 import { extractTextFromBuffer } from "@/lib/ai/extract";
@@ -31,6 +34,21 @@ export async function POST(req: NextRequest) {
   const session = await getCandidateSession();
   if (!session) {
     return NextResponse.json({ error: "请先登录" }, { status: 401 });
+  }
+
+  // D6.5 演示限额：每账号投递数 >= 上限时，parse 也一并拒绝（防绕过）
+  const cap = Number(process.env.DEMO_MAX_APPLICATIONS_PER_CANDIDATE ?? 0);
+  if (cap > 0) {
+    const [row] = await db
+      .select({ c: sql<number>`count(*)` })
+      .from(applications)
+      .where(eq(applications.candidateId, session.sub));
+    if (Number(row?.c ?? 0) >= cap) {
+      return NextResponse.json(
+        { error: `演示限额：每账号最多可投递 ${cap} 次` },
+        { status: 429 },
+      );
+    }
   }
 
   let body: unknown;

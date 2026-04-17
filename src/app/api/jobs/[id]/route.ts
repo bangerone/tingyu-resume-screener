@@ -7,6 +7,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { jobs } from "@/lib/db/schema";
 import { isHrAuthenticated } from "@/lib/auth/hr";
+import { isReadOnlyHr, readOnlyHrResponse } from "@/lib/auth/demo-guard";
 import { jobPatchSchema } from "@/features/jobs/job-schema";
 
 export const runtime = "nodejs";
@@ -28,6 +29,7 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
   if (!(await isHrAuthenticated())) {
     return NextResponse.json({ error: "未登录" }, { status: 401 });
   }
+  if (isReadOnlyHr()) return readOnlyHrResponse();
 
   let body: unknown;
   try {
@@ -57,6 +59,7 @@ export async function DELETE(_req: NextRequest, { params }: Ctx) {
   if (!(await isHrAuthenticated())) {
     return NextResponse.json({ error: "未登录" }, { status: 401 });
   }
+  if (isReadOnlyHr()) return readOnlyHrResponse();
   await db.delete(jobs).where(eq(jobs.id, params.id));
   return new NextResponse(null, { status: 204 });
 }

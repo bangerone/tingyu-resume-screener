@@ -8,14 +8,21 @@
 import Link from "next/link";
 import { Toaster } from "@/components/ui/toast";
 import { AdminNav } from "./_nav";
+import { isReadOnlyHr } from "@/lib/auth/demo-guard";
 
 export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const readOnly = isReadOnlyHr();
   return (
     <div className="min-h-screen bg-slate-50">
+      {readOnly && (
+        <div className="border-b border-amber-200 bg-amber-50 px-4 py-2 text-center text-xs text-amber-800">
+          🔒 演示模式 · HR 只读访问，写操作会被拒绝
+        </div>
+      )}
       <AdminNav />
       <main className="mx-auto max-w-6xl px-6 py-8">{children}</main>
       <Toaster />

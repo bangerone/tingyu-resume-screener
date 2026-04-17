@@ -5,7 +5,7 @@
 
 import { NextResponse, type NextRequest } from "next/server";
 import { randomUUID } from "crypto";
-import { and, desc, eq, gt } from "drizzle-orm";
+import { and, desc, eq, gt, sql } from "drizzle-orm";
 import { getCandidateSession } from "@/lib/auth/candidate";
 import { isHrAuthenticated } from "@/lib/auth/hr";
 import { db } from "@/lib/db/client";
@@ -20,6 +20,21 @@ export async function POST(req: NextRequest) {
   const session = await getCandidateSession();
   if (!session) {
     return NextResponse.json({ error: "请先登录" }, { status: 401 });
+  }
+
+  // D6.5 演示限额：每账号投递数 >= 上限时拒绝
+  const cap = Number(process.env.DEMO_MAX_APPLICATIONS_PER_CANDIDATE ?? 0);
+  if (cap > 0) {
+    const [row] = await db
+      .select({ c: sql<number>`count(*)` })
+      .from(applications)
+      .where(eq(applications.candidateId, session.sub));
+    if (Number(row?.c ?? 0) >= cap) {
+      return NextResponse.json(
+        { error: `演示限额：每账号最多可投递 ${cap} 次` },
+        { status: 429 },
+      );
+    }
   }
 
   let body: unknown;

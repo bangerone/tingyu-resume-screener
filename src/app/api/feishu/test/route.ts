@@ -14,6 +14,7 @@ import { z } from "zod";
 import { db } from "@/lib/db/client";
 import { applications, jobs } from "@/lib/db/schema";
 import { isHrAuthenticated } from "@/lib/auth/hr";
+import { isReadOnlyHr, readOnlyHrResponse } from "@/lib/auth/demo-guard";
 import { pushToFeishu } from "@/features/feishu";
 
 export const runtime = "nodejs";
@@ -27,6 +28,7 @@ export async function POST(req: NextRequest) {
   if (!(await isHrAuthenticated())) {
     return NextResponse.json({ error: "未登录" }, { status: 401 });
   }
+  if (isReadOnlyHr()) return readOnlyHrResponse();
 
   let body: unknown;
   try {

@@ -8,6 +8,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { isHrAuthenticated } from "@/lib/auth/hr";
+import { bumpAndCheck } from "@/lib/rate-limit";
 import {
   generateCriteriaFromJD,
   CriteriaGenError,
@@ -23,6 +24,15 @@ const bodySchema = z.object({
 export async function POST(req: NextRequest) {
   if (!(await isHrAuthenticated())) {
     return NextResponse.json({ error: "未登录" }, { status: 401 });
+  }
+
+  // D6.5 全局每日 10 次上限（保留 LLM 体验但防账单被薅）
+  const rl = bumpAndCheck("generate-criteria|daily", 10, 24 * 60 * 60 * 1000);
+  if (!rl.ok) {
+    return NextResponse.json(
+      { error: "演示限额：AI 生成已达今日上限" },
+      { status: 429 },
+    );
   }
 
   let body: unknown;

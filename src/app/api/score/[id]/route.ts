@@ -23,6 +23,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { applications, jobs } from "@/lib/db/schema";
 import { isHrAuthenticated } from "@/lib/auth/hr";
+import { isReadOnlyHr, readOnlyHrResponse } from "@/lib/auth/demo-guard";
 import { scoreResume, AiScoreError } from "@/lib/ai/scorer";
 import { pushToFeishu } from "@/features/feishu";
 
@@ -53,6 +54,8 @@ export async function POST(
   if (!isInternal && !hrOk) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
+  // HR 手动重试被演示模式拦截；内部 fire-and-forget 照旧放行，保证投递链路不断
+  if (!isInternal && isReadOnlyHr()) return readOnlyHrResponse();
 
   // 1. 取 application
   const [app] = await db

@@ -7,6 +7,7 @@ import { desc } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { jobs } from "@/lib/db/schema";
 import { isHrAuthenticated } from "@/lib/auth/hr";
+import { isReadOnlyHr, readOnlyHrResponse } from "@/lib/auth/demo-guard";
 import { jobInputSchema } from "@/features/jobs/job-schema";
 
 export const runtime = "nodejs";
@@ -24,6 +25,7 @@ export async function POST(req: NextRequest) {
   if (!(await isHrAuthenticated())) {
     return NextResponse.json({ error: "未登录" }, { status: 401 });
   }
+  if (isReadOnlyHr()) return readOnlyHrResponse();
 
   let body: unknown;
   try {
