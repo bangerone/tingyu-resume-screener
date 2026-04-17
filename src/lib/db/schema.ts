@@ -68,7 +68,7 @@ export const jobs = mysqlTable(
     title: varchar("title", { length: 128 }).notNull(),
     department: varchar("department", { length: 64 }).notNull().default(""),
     location: varchar("location", { length: 64 }).notNull().default(""),
-    description: text("description").notNull().default(""),
+    description: text("description").notNull(),
     criteria: json("criteria").$type<ScreeningCriteria>().notNull(),
     pushThreshold: int("push_threshold").notNull().default(80),
     status: mysqlEnum("status", ["draft", "open", "closed"])
@@ -127,7 +127,7 @@ export const feishuLogs = mysqlTable("feishu_logs", {
   applicationId: varchar("application_id", { length: 36 }).notNull(),
   jobId: varchar("job_id", { length: 36 }).notNull(),
   ok: boolean("ok").notNull(),
-  response: text("response").notNull().default(""),
+  response: text("response").notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
