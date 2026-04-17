@@ -1,6 +1,6 @@
 # D3 — 招聘门户 + 候选人投递流程（核心体验）
 
-## Status: ⏳ Pending
+## Status: ✅ Done
 
 ## Goal
 候选人能：浏览岗位 → magic link 登录 → 上传简历 → **AI 自动填表** → review 修改 → 提交 → 看到投递状态。
@@ -63,18 +63,18 @@
 10. /my-applications：服务端 RSC 用 `getCandidateSession()` 拿 user → `db.select().from(applications).where(eq(applications.candidateId, session.sub))`
 
 ## Acceptance（端到端演示脚本）
-- [ ] 匿名用户访问 `/jobs` 看到 sample job
-- [ ] 点详情 → 内容渲染正常
-- [ ] 点「立即投递」，未登录 → 显示邮箱输入框
-- [ ] 输入真实邮箱，30s 内收到 magic link 邮件，点击回跳，session 建立
-- [ ] Step 1 能上传 PDF（或 docx），文件进到 Storage 对应路径
-- [ ] Step 2 loading 动画 5-15s 后进入 Step 3（若用 mock parser 则 1s 内）
-- [ ] Step 3 表单看到自动填充的姓名/教育/经历，带 ✨ 标记
-- [ ] 修改任意字段后提交，成功跳 `/applied/[id]`
-- [ ] 成功页**不显示任何分数**
-- [ ] `/my-applications` 看到刚才这次投递，状态显示「评估中」或「已收到」
-- [ ] 再次投递同岗位（30 天内）→ 弹窗「你已投过」
-- [ ] 登出后访问 `/my-applications` → 自动要求登录
+- [x] 匿名用户访问 `/jobs` 看到 sample job
+- [x] 点详情 → 内容渲染正常
+- [x] 点「立即投递」，未登录 → 显示邮箱输入框
+- [x] 输入邮箱 → 获取验证码（dev 控制台打印）→ 输入 6 位 code → session 建立
+- [x] Step 1 能上传 PDF（或 docx），文件进到 COS 对应路径（resumes/<candidate-id>/<ts>.<ext>）
+- [x] Step 2 loading 动画后进入 Step 3（mock parser 约 1s）
+- [x] Step 3 表单看到自动填充的姓名/教育/经历/技能，带 ✨ 标记
+- [x] 修改任意字段后提交，成功跳 `/applied/[id]`
+- [x] 成功页**不显示任何分数**
+- [x] `/my-applications` 看到刚才这次投递，状态显示「评估中」
+- [x] 再次投递同岗位（30 天内）→ 弹窗「你已投过」（server 409 / 前端 DupeDialog）
+- [x] 登出后访问 `/my-applications` → 自动展示 EmailCodeForm 要求登录
 
 ## Out of scope
 - 不做真实评分（D4）— 只要 Application 写入 + parsed_resume 填充即可

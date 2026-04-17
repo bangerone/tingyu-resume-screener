@@ -1,0 +1,123 @@
+// ============================================================
+// POST /api/applications  — 候选人提交投递
+// GET  /api/applications  — 当前候选人的投递列表（RSC 用不到，保留给前端 fallback）
+// ============================================================
+
+import { NextResponse, type NextRequest } from "next/server";
+import { randomUUID } from "crypto";
+import { and, desc, eq, gt } from "drizzle-orm";
+import { getCandidateSession } from "@/lib/auth/candidate";
+import { db } from "@/lib/db/client";
+import { applications, candidates, jobs } from "@/lib/db/schema";
+import { applicationSubmitSchema } from "@/lib/validators/application";
+
+export const runtime = "nodejs";
+
+const DEDUP_WINDOW_MS = 30 * 24 * 60 * 60 * 1000; // 30 天
+
+export async function POST(req: NextRequest) {
+  const session = await getCandidateSession();
+  if (!session) {
+    return NextResponse.json({ error: "请先登录" }, { status: 401 });
+  }
+
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "invalid body" }, { status: 400 });
+  }
+
+  const parsed = applicationSubmitSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: parsed.error.issues[0]?.message ?? "参数校验失败" },
+      { status: 400 },
+    );
+  }
+  const input = parsed.data;
+
+  // fileKey 必须在自己目录下
+  if (!input.resumeFileKey.startsWith(`resumes/${session.sub}/`)) {
+    return NextResponse.json(
+      { error: "简历路径非法" },
+      { status: 403 },
+    );
+  }
+
+  // 岗位必须存在 + open
+  const [job] = await db.select().from(jobs).where(eq(jobs.id, input.jobId)).limit(1);
+  if (!job) {
+    return NextResponse.json({ error: "岗位不存在" }, { status: 404 });
+  }
+  if (job.status !== "open") {
+    return NextResponse.json(
+      { error: "该岗位暂未开放投递" },
+      { status: 400 },
+    );
+  }
+
+  // 30 天内去重
+  const since = new Date(Date.now() - DEDUP_WINDOW_MS);
+  const dupes = await db
+    .select({ id: applications.id })
+    .from(applications)
+    .where(
+      and(
+        eq(applications.candidateId, session.sub),
+        eq(applications.jobId, input.jobId),
+        gt(applications.createdAt, since),
+      ),
+    )
+    .limit(1);
+  if (dupes.length > 0) {
+    return NextResponse.json(
+      { error: "你已投过该岗位（30 天内不可重复投递）", duplicate: true },
+      { status: 409 },
+    );
+  }
+
+  // 更新候选人 name（若之前没填）
+  if (input.candidateName) {
+    await db
+      .update(candidates)
+      .set({ name: input.candidateName })
+      .where(eq(candidates.id, session.sub));
+  }
+
+  const id = randomUUID();
+  await db.insert(applications).values({
+    id,
+    jobId: input.jobId,
+    candidateId: session.sub,
+    candidateName: input.candidateName,
+    candidateEmail: session.email ?? "",
+    candidatePhone: input.candidatePhone ?? "",
+    resumeFileKey: input.resumeFileKey,
+    parsedResume: input.parsedResume,
+    status: "received",
+  });
+
+  // D4 将接入 fire-and-forget 评分；D3 只写 received。
+  return NextResponse.json({ id }, { status: 201 });
+}
+
+export async function GET() {
+  const session = await getCandidateSession();
+  if (!session) {
+    return NextResponse.json({ error: "请先登录" }, { status: 401 });
+  }
+
+  const rows = await db
+    .select({
+      id: applications.id,
+      jobId: applications.jobId,
+      status: applications.status,
+      createdAt: applications.createdAt,
+    })
+    .from(applications)
+    .where(eq(applications.candidateId, session.sub))
+    .orderBy(desc(applications.createdAt));
+
+  return NextResponse.json({ applications: rows });
+}

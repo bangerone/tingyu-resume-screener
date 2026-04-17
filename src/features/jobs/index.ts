@@ -1,6 +1,7 @@
 export { JobForm } from "./job-form";
 export { CriteriaEditor } from "./criteria-editor";
 export { JobStatusActions } from "./job-status-actions";
+export { JobCard } from "./job-card";
 export {
   jobInputSchema,
   jobPatchSchema,
