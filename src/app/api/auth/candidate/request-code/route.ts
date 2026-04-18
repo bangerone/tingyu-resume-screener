@@ -32,7 +32,13 @@ export async function POST(req: NextRequest) {
   const email = parsed.data.email.toLowerCase().trim();
   try {
     const code = await issueEmailCode(email);
-    await sendCandidateCode({ to: email, code });
+    const result = await sendCandidateCode({ to: email, code });
+    // demo / dev：没配 RESEND_API_KEY 时，直接把验证码带回前端，
+    // 让任何邮箱都能在浏览器里完成登录演示（不再需要看 server log）。
+    // 生产环境必须配 RESEND_API_KEY，届时 devPrinted=false，不会泄露。
+    if (result.devPrinted) {
+      return NextResponse.json({ ok: true, devCode: code });
+    }
     return NextResponse.json({ ok: true });
   } catch (e: any) {
     return NextResponse.json(

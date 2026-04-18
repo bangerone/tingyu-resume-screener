@@ -5,6 +5,7 @@ import { db } from "@/lib/db/client";
 import { jobs } from "@/lib/db/schema";
 import { CandidateNav } from "@/features/layout/candidate-nav";
 import { Button } from "@/components/ui/button";
+import { Markdown } from "@/lib/markdown";
 
 export const dynamic = "force-dynamic";
 
@@ -42,8 +43,8 @@ export default async function JobDetailPage({
           </div>
         </header>
 
-        <article className="prose prose-slate mt-8 max-w-none whitespace-pre-wrap text-[15px] leading-relaxed text-slate-700">
-          {job.description}
+        <article className="mt-8 max-w-none">
+          <Markdown source={job.description} />
         </article>
 
         <div className="mt-12 rounded-xl border border-brand-200 bg-brand-50/40 p-6">

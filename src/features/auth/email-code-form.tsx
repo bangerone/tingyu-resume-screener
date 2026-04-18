@@ -27,6 +27,8 @@ export function EmailCodeForm({ onSuccess, defaultEmail = "" }: Props) {
   const [codeDigits, setCodeDigits] = useState<string[]>(Array(6).fill(""));
   const [cooldown, setCooldown] = useState(0);
   const [busy, setBusy] = useState(false);
+  // demo 模式下由 server 下发的验证码（仅在未配 Resend 时返回）
+  const [devCode, setDevCode] = useState<string | null>(null);
   const inputs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
@@ -42,11 +44,20 @@ export function EmailCodeForm({ onSuccess, defaultEmail = "" }: Props) {
     }
     setBusy(true);
     try {
-      await apiJson("/api/auth/candidate/request-code", {
-        method: "POST",
-        body: { email: email.trim().toLowerCase() },
-      });
-      toast.success("验证码已发送，请检查邮箱（开发模式见 server 控制台）");
+      const res = await apiJson<{ ok: true; devCode?: string }>(
+        "/api/auth/candidate/request-code",
+        {
+          method: "POST",
+          body: { email: email.trim().toLowerCase() },
+        },
+      );
+      if (res?.devCode) {
+        setDevCode(res.devCode);
+        toast.success("Demo 模式：验证码已下发，点击下方「一键填入」即可登录");
+      } else {
+        setDevCode(null);
+        toast.success("验证码已发送，请检查邮箱");
+      }
       setStep("code");
       setCooldown(60);
       setTimeout(() => inputs.current[0]?.focus(), 50);
@@ -55,6 +66,14 @@ export function EmailCodeForm({ onSuccess, defaultEmail = "" }: Props) {
     } finally {
       setBusy(false);
     }
+  }
+
+  function fillDevCode() {
+    if (!devCode) return;
+    const next = Array(6).fill("");
+    for (let i = 0; i < devCode.length && i < 6; i++) next[i] = devCode[i];
+    setCodeDigits(next);
+    setTimeout(() => inputs.current[5]?.focus(), 10);
   }
 
   async function verifyCode() {
@@ -147,6 +166,30 @@ export function EmailCodeForm({ onSuccess, defaultEmail = "" }: Props) {
         <Label>验证码已发送至</Label>
         <p className="mt-1 text-sm font-medium text-slate-900">{email}</p>
       </div>
+
+      {devCode ? (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <div className="font-medium text-amber-900">Demo 模式验证码</div>
+              <div className="mt-0.5 text-xs text-amber-700">
+                此环境未配置邮件发送（Resend），任何邮箱都可直接登录演示。
+              </div>
+            </div>
+            <div className="font-mono text-xl font-bold tracking-[0.2em] text-amber-900">
+              {devCode}
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={fillDevCode}
+            className="mt-2 w-full rounded-md bg-amber-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-amber-600"
+          >
+            一键填入
+          </button>
+        </div>
+      ) : null}
+
       <div className="flex gap-2" onPaste={handleCodePaste}>
         {codeDigits.map((d, i) => (
           <input
