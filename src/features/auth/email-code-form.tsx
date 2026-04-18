@@ -53,7 +53,7 @@ export function EmailCodeForm({ onSuccess, defaultEmail = "" }: Props) {
       );
       if (res?.devCode) {
         setDevCode(res.devCode);
-        toast.success("Demo 模式：验证码已下发，点击下方「一键填入」即可登录");
+        toast.success("Demo 模式：验证码已下发，点击下方按钮一键填入即可登录");
       } else {
         setDevCode(null);
         toast.success("验证码已发送，请检查邮箱");

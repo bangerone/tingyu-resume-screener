@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "庭宇 · 智能简历筛选",
-  description: "AI-powered resume screening for hiring teams",
+  title: "庭宇科技 · 智能简历筛选",
+  description: "庭宇科技 · AI 驱动的招聘与简历筛选平台",
 };
 
 export default function RootLayout({

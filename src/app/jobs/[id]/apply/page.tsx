@@ -34,7 +34,7 @@ export default async function ApplyPage({
           投递 · {job.title}
         </h1>
         <p className="mt-1 text-sm text-slate-500">
-          三步：登录 → 上传简历 → 检查并确认
+          上传简历可 AI 自动填表，也可以直接在下方手动填写
         </p>
 
         <div className="mt-8">

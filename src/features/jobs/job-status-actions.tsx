@@ -9,6 +9,7 @@
 // ============================================================
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { apiJson } from "@/lib/api";
@@ -57,6 +58,11 @@ export function JobStatusActions({ jobId, status }: Props) {
 
   return (
     <div className="flex items-center justify-end gap-2">
+      <Link href={`/admin/jobs/${jobId}`}>
+        <Button size="sm" variant="ghost" disabled={busy !== null}>
+          编辑
+        </Button>
+      </Link>
       {status === "draft" && (
         <Button
           size="sm"

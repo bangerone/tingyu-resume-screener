@@ -53,8 +53,11 @@ export async function POST(req: NextRequest) {
   }
   const input = parsed.data;
 
-  // fileKey 必须在自己目录下
-  if (!input.resumeFileKey.startsWith(`resumes/${session.sub}/`)) {
+  // fileKey 非空时，必须在自己目录下；空字符串表示候选人只手填未上传
+  if (
+    input.resumeFileKey &&
+    !input.resumeFileKey.startsWith(`resumes/${session.sub}/`)
+  ) {
     return NextResponse.json(
       { error: "简历路径非法" },
       { status: 403 },

@@ -56,6 +56,14 @@ export interface ParsedResume {
   phone?: string;
   location?: string;
   total_years?: number;
+  /** 候选人自填补充字段（可选，LLM 不强制要求） */
+  gender?: string;
+  birth_date?: string;
+  work_status?: string;
+  expected_city?: string;
+  expected_salary?: string;
+  available_from?: string;
+  self_intro?: string;
   education: { school: string; degree: string; major: string; period: string }[];
   experience: {
     company: string;

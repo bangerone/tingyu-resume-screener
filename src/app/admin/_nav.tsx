@@ -8,6 +8,7 @@ import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { LogoMark } from "@/components/brand/logo";
 
 const tabs = [
   { href: "/admin", label: "工作台", match: (p: string) => p === "/admin" },
@@ -34,10 +35,16 @@ export function AdminNav() {
         <div className="flex items-center gap-6">
           <Link
             href="/admin"
-            className="text-sm font-semibold text-slate-900"
+            className="flex items-center gap-2"
             onClick={() => setOpen(false)}
           >
-            庭宇 · HR 工作台
+            <LogoMark size={24} />
+            <span className="text-sm font-semibold text-slate-900">
+              庭宇科技
+            </span>
+            <span className="hidden text-xs text-slate-400 md:inline">
+              · HR 工作台
+            </span>
           </Link>
           <nav className="hidden items-center gap-1 md:flex">
             {tabs.map((t) => {

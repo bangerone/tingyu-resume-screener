@@ -13,6 +13,7 @@ import { useRouter } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { Toaster } from "@/components/ui/toast";
 import { candidateLogout, useCandidateSession } from "@/features/auth";
+import { BrandLogo } from "@/components/brand/logo";
 import { cn } from "@/lib/utils";
 
 export function CandidateNav() {
@@ -34,10 +35,16 @@ export function CandidateNav() {
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <Link
             href="/"
-            className="text-lg font-bold tracking-tight"
+            className="flex items-center gap-2"
             onClick={() => setOpen(false)}
           >
-            庭宇 <span className="text-brand-600">Careers</span>
+            <BrandLogo
+              size={28}
+              textClassName="text-base font-semibold text-slate-900"
+            />
+            <span className="hidden text-sm font-medium text-brand-600 sm:inline">
+              Careers
+            </span>
           </Link>
 
           {/* 桌面菜单 */}

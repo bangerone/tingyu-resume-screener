@@ -30,6 +30,13 @@ export const parsedResumeSchema = z.object({
   phone: z.string().default(""),
   location: z.string().default(""),
   total_years: z.number().optional(),
+  gender: z.string().default(""),
+  birth_date: z.string().default(""),
+  work_status: z.string().default(""),
+  expected_city: z.string().default(""),
+  expected_salary: z.string().default(""),
+  available_from: z.string().default(""),
+  self_intro: z.string().default(""),
   education: z.array(educationItemSchema).default([]),
   experience: z.array(experienceItemSchema).default([]),
   skills: z.array(z.string()).default([]),
@@ -39,7 +46,8 @@ export const parsedResumeSchema = z.object({
 
 export const applicationSubmitSchema = z.object({
   jobId: z.string().min(1),
-  resumeFileKey: z.string().min(1),
+  // 允许简历 fileKey 为空（候选人没简历，只手填）
+  resumeFileKey: z.string().default(""),
   candidateName: z.string().min(1, "请填写姓名").max(64),
   candidatePhone: z.string().max(32).default(""),
   parsedResume: parsedResumeSchema,
