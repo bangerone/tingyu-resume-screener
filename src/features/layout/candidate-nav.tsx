@@ -73,7 +73,14 @@ export function CandidateNav() {
                   退出
                 </button>
               </>
-            ) : null}
+            ) : (
+              <Link
+                href="/my-applications"
+                className="rounded-md bg-brand-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm transition hover:bg-brand-700"
+              >
+                登录
+              </Link>
+            )}
           </div>
 
           {/* 移动端汉堡 */}
@@ -125,7 +132,15 @@ export function CandidateNav() {
                   退出
                 </button>
               </div>
-            ) : null}
+            ) : (
+              <Link
+                href="/my-applications"
+                onClick={() => setOpen(false)}
+                className="mt-1 block rounded-md bg-brand-600 px-3 py-2 text-center text-sm font-medium text-white"
+              >
+                登录
+              </Link>
+            )}
           </div>
         </div>
       </nav>

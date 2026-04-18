@@ -3,7 +3,10 @@ import { Card } from "@/components/ui/card";
 import type { Job } from "@/lib/db/schema";
 
 interface Props {
-  job: Pick<Job, "id" | "title" | "department" | "location" | "description">;
+  job: Pick<
+    Job,
+    "id" | "title" | "department" | "location" | "description" | "hiringType"
+  >;
 }
 
 export function JobCard({ job }: Props) {
@@ -11,11 +14,22 @@ export function JobCard({ job }: Props) {
     .replace(/[#*>`_\[\]()]/g, "")
     .slice(0, 90)
     .trim();
+  const isCampus = job.hiringType === "campus";
 
   return (
     <Link href={`/jobs/${job.id}`} className="group block">
       <Card className="h-full p-6 transition-all hover:border-brand-400 hover:shadow-md">
         <div className="flex items-center gap-2">
+          <span
+            className={
+              "inline-flex rounded-full px-2 py-0.5 text-xs font-medium " +
+              (isCampus
+                ? "bg-violet-50 text-violet-700"
+                : "bg-sky-50 text-sky-700")
+            }
+          >
+            {isCampus ? "校招" : "社招"}
+          </span>
           <span className="inline-flex rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
             在招
           </span>

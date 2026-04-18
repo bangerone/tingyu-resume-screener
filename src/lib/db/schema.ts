@@ -74,6 +74,9 @@ export const jobs = mysqlTable(
     status: mysqlEnum("status", ["draft", "open", "closed"])
       .notNull()
       .default("draft"),
+    hiringType: mysqlEnum("hiring_type", ["campus", "social"])
+      .notNull()
+      .default("social"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at")
       .notNull()

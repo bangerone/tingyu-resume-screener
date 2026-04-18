@@ -27,6 +27,7 @@ export default async function EditJobPage({
     criteria: row.criteria ?? emptyCriteria,
     pushThreshold: row.pushThreshold,
     status: row.status,
+    hiringType: row.hiringType ?? "social",
   };
 
   return (

@@ -15,6 +15,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { formatDateTime } from "@/lib/utils";
 import { ScoreBadge } from "@/features/scoring/score-badge";
 import type { ApplicationStatus } from "@/types";
+import { ClickableRow } from "./_clickable-row";
 
 export const dynamic = "force-dynamic";
 
@@ -236,17 +237,14 @@ export default async function AdminApplicationsPage({
                 </thead>
                 <tbody className="divide-y divide-slate-200">
                   {rows.map((r) => (
-                    <tr
+                    <ClickableRow
                       key={r.id}
-                      className="cursor-pointer hover:bg-slate-50/70"
+                      href={`/admin/applications/${r.id}`}
                     >
                       <td className="px-4 py-3">
-                        <Link
-                          href={`/admin/applications/${r.id}`}
-                          className="font-medium text-slate-900 hover:text-brand-600"
-                        >
+                        <div className="font-medium text-slate-900">
                           {r.candidateName || "(未填)"}
-                        </Link>
+                        </div>
                         <div className="text-xs text-slate-500">
                           {r.candidateEmail}
                         </div>
@@ -282,7 +280,7 @@ export default async function AdminApplicationsPage({
                       <td className="px-4 py-3 text-xs text-slate-500">
                         {formatDateTime(r.createdAt)}
                       </td>
-                    </tr>
+                    </ClickableRow>
                   ))}
                 </tbody>
               </table>

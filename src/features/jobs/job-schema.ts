@@ -39,6 +39,7 @@ export const screeningCriteriaSchema = z.object({
 });
 
 export const jobStatusSchema = z.enum(["draft", "open", "closed"]);
+export const hiringTypeSchema = z.enum(["campus", "social"]);
 
 export const jobInputSchema = z.object({
   title: z.string().min(1, "岗位标题必填").max(128),
@@ -48,6 +49,7 @@ export const jobInputSchema = z.object({
   criteria: screeningCriteriaSchema,
   pushThreshold: z.number().int().min(0).max(100).default(80),
   status: jobStatusSchema.default("draft"),
+  hiringType: hiringTypeSchema.default("social"),
 });
 
 export const jobPatchSchema = jobInputSchema.partial();
@@ -70,4 +72,10 @@ export const emptyJobInput: JobInput = {
   criteria: emptyCriteria,
   pushThreshold: 80,
   status: "draft",
+  hiringType: "social",
+};
+
+export const HIRING_TYPE_LABEL: Record<"campus" | "social", string> = {
+  campus: "校招",
+  social: "社招",
 };

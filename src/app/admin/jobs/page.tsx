@@ -62,7 +62,10 @@ export default async function AdminJobsListPage() {
                   >
                     {job.title}
                   </Link>
-                  <StatusBadge status={job.status} />
+                  <div className="flex items-center gap-1">
+                    <HiringTypeBadge type={job.hiringType} />
+                    <StatusBadge status={job.status} />
+                  </div>
                 </div>
                 <div className="mt-2 text-xs text-slate-500">
                   {job.department || "—"} · {job.location || "不限"} · 阈值{" "}
@@ -85,6 +88,7 @@ export default async function AdminJobsListPage() {
                 <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
                   <tr>
                     <th className="px-4 py-3 font-medium">标题</th>
+                    <th className="px-4 py-3 font-medium">类型</th>
                     <th className="px-4 py-3 font-medium">部门</th>
                     <th className="px-4 py-3 font-medium">地点</th>
                     <th className="px-4 py-3 font-medium">状态</th>
@@ -103,6 +107,9 @@ export default async function AdminJobsListPage() {
                         >
                           {job.title}
                         </Link>
+                      </td>
+                      <td className="px-4 py-3">
+                        <HiringTypeBadge type={job.hiringType} />
                       </td>
                       <td className="px-4 py-3 text-slate-600">
                         {job.department || "—"}
@@ -131,6 +138,22 @@ export default async function AdminJobsListPage() {
         </>
       )}
     </div>
+  );
+}
+
+function HiringTypeBadge({ type }: { type: string }) {
+  const isCampus = type === "campus";
+  return (
+    <span
+      className={
+        "inline-flex rounded-full px-2 py-0.5 text-xs font-medium " +
+        (isCampus
+          ? "bg-violet-50 text-violet-700"
+          : "bg-sky-50 text-sky-700")
+      }
+    >
+      {isCampus ? "校招" : "社招"}
+    </span>
   );
 }
 

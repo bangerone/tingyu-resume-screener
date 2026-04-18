@@ -160,6 +160,46 @@ export function JobForm({ mode, jobId, defaultValues }: Props) {
                 placeholder="上海"
               />
             </div>
+            <div className="col-span-12">
+              <Label>招聘类型 *</Label>
+              <div className="mt-1 flex gap-2">
+                {(["social", "campus"] as const).map((v) => {
+                  const active = watch("hiringType") === v;
+                  const label = v === "campus" ? "校招" : "社招";
+                  const desc =
+                    v === "campus"
+                      ? "面向应届毕业生 / 实习生"
+                      : "面向有工作经验的候选人";
+                  return (
+                    <button
+                      key={v}
+                      type="button"
+                      onClick={() =>
+                        setValue("hiringType", v, { shouldDirty: true })
+                      }
+                      className={
+                        "flex-1 rounded-lg border px-4 py-3 text-left transition " +
+                        (active
+                          ? "border-brand-500 bg-brand-50 ring-1 ring-brand-200"
+                          : "border-slate-200 bg-white hover:border-brand-300")
+                      }
+                    >
+                      <div
+                        className={
+                          "text-sm font-semibold " +
+                          (active ? "text-brand-700" : "text-slate-900")
+                        }
+                      >
+                        {label}
+                      </div>
+                      <div className="mt-0.5 text-xs text-slate-500">
+                        {desc}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </div>
 
           <div>
