@@ -55,13 +55,28 @@ export async function downloadResume(fileKey: string): Promise<Buffer> {
   });
 }
 
-/** Generate a signed read URL (default 5 min) for HR preview. */
+/** Generate a signed read URL (default 5 min) for HR preview.
+ *  关键：加 response-content-disposition=inline，否则 COS 默认下发 attachment，
+ *  浏览器 iframe 会静默拒绝渲染，表现为"简历原件"一片空白。
+ *  同时按扩展名纠正 MIME，让 PDF / docx 预览正确识别。 */
 export function getSignedReadUrl(fileKey: string, expiresSec = 300): string {
+  const ext = fileKey.split(".").pop()?.toLowerCase() ?? "";
+  const mimeByExt: Record<string, string> = {
+    pdf: "application/pdf",
+    docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    doc: "application/msword",
+  };
+  const query: Record<string, string> = {
+    "response-content-disposition": "inline",
+  };
+  const mime = mimeByExt[ext];
+  if (mime) query["response-content-type"] = mime;
   return getCos().getObjectUrl({
     Bucket: COS_BUCKET(),
     Region: COS_REGION(),
     Key: fileKey,
     Sign: true,
     Expires: expiresSec,
+    Query: query,
   } as any);
 }

@@ -152,7 +152,7 @@ function HiringTypeBadge({ type }: { type: string }) {
           : "bg-sky-50 text-sky-700")
       }
     >
-      {isCampus ? "校招" : "社招"}
+      {isCampus ? "校园招聘" : "社会招聘"}
     </span>
   );
 }

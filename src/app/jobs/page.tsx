@@ -46,8 +46,8 @@ export default async function JobsPage({
 
   const tabs: { key: Tab; label: string; count: number }[] = [
     { key: "all", label: "全部", count: counts.all },
-    { key: "social", label: "社招", count: counts.social },
-    { key: "campus", label: "校招", count: counts.campus },
+    { key: "social", label: "社会招聘", count: counts.social },
+    { key: "campus", label: "校园招聘", count: counts.campus },
   ];
 
   return (
@@ -101,9 +101,9 @@ export default async function JobsPage({
             title="暂无岗位"
             description={
               tab === "campus"
-                ? "当前没有校招岗位在招，试试看社招？"
+                ? "当前没有校园招聘岗位在招，试试看社会招聘？"
                 : tab === "social"
-                ? "当前没有社招岗位在招，试试看校招？"
+                ? "当前没有社会招聘岗位在招，试试看校园招聘？"
                 : "我们正在整理新一轮招聘需求，敬请期待。"
             }
           />

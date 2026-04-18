@@ -87,6 +87,6 @@ export const emptyJobInput: JobInput = {
 };
 
 export const HIRING_TYPE_LABEL: Record<"campus" | "social", string> = {
-  campus: "校招",
-  social: "社招",
+  campus: "校园招聘",
+  social: "社会招聘",
 };

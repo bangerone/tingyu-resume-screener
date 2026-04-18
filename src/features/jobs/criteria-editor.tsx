@@ -137,13 +137,22 @@ export function CriteriaEditor({
 
 // -------------------- Hard requirements --------------------
 
+const EDUCATION_OPTIONS = [
+  { value: "大专", label: "大专及以上" },
+  { value: "本科", label: "本科及以上" },
+  { value: "硕士", label: "硕士及以上" },
+  { value: "博士", label: "博士" },
+];
+
+const MIN_YEARS_OPTIONS = [1, 2, 3, 5, 8, 10];
+
 function HardList({
   control,
   register,
   errors,
   justAddedKeys,
 }: Props) {
-  const { fields, append, remove } = useFieldArray({
+  const { fields, append, remove, update } = useFieldArray({
     control,
     name: "criteria.hard",
   });
@@ -153,7 +162,9 @@ function HardList({
     <Section
       title="硬性要求"
       hint="不满足直接判负。常见如学历、最低年限、地点。"
-      onAdd={() => append({ kind: "education", label: "", value: "" })}
+      onAdd={() =>
+        append({ kind: "education", label: "本科及以上", value: "本科" })
+      }
       presets={
         <PresetBar>
           {HARD_PRESETS.map((p) => (
@@ -170,41 +181,101 @@ function HardList({
       }
     >
       {fields.length === 0 && <Empty text="暂无硬性要求" />}
-      {fields.map((f, i) => (
-        <Row
-          key={f.id}
-          onRemove={() => remove(i)}
-          highlight={
-            justAddedKeys?.has(itemKey(watched[i] ?? {})) ?? false
-          }
-        >
-          <div className="col-span-12 md:col-span-3">
-            <Label className="text-xs text-slate-500">类别</Label>
-            <Select {...register(`criteria.hard.${i}.kind` as const)}>
-              <option value="education">学历</option>
-              <option value="min_years">最低年限</option>
-              <option value="location">工作地点</option>
-              <option value="custom">自定义</option>
-            </Select>
-          </div>
-          <div className="col-span-12 md:col-span-4">
-            <Label className="text-xs text-slate-500">说明</Label>
-            <Input
-              placeholder="如：本科及以上"
-              {...register(`criteria.hard.${i}.label` as const)}
-            />
-            <FieldError msg={errors.criteria?.hard?.[i]?.label?.message} />
-          </div>
-          <div className="col-span-12 md:col-span-5">
-            <Label className="text-xs text-slate-500">值</Label>
-            <Input
-              placeholder="如：本科 / 3 / 上海"
-              {...register(`criteria.hard.${i}.value` as const)}
-            />
-            <FieldError msg={errors.criteria?.hard?.[i]?.value?.message} />
-          </div>
-        </Row>
-      ))}
+      {fields.map((f, i) => {
+        const cur = watched[i];
+        const kind = cur?.kind ?? "education";
+        return (
+          <Row
+            key={f.id}
+            onRemove={() => remove(i)}
+            highlight={justAddedKeys?.has(itemKey(cur ?? {})) ?? false}
+          >
+            <div className="col-span-12 md:col-span-3">
+              <Label className="text-xs text-slate-500">类别</Label>
+              <Select
+                value={kind}
+                onChange={(e) => {
+                  const next = e.target.value as
+                    | "education"
+                    | "min_years"
+                    | "location"
+                    | "custom";
+                  // 切类别时顺手补一个合理的默认 label / value，避免残留旧类别的值
+                  if (next === "education")
+                    update(i, {
+                      kind: next,
+                      label: "本科及以上",
+                      value: "本科",
+                    });
+                  else if (next === "min_years")
+                    update(i, {
+                      kind: next,
+                      label: "3 年以上经验",
+                      value: 3,
+                    });
+                  else if (next === "location")
+                    update(i, {
+                      kind: next,
+                      label: "坐标上海",
+                      value: "上海",
+                    });
+                  else
+                    update(i, {
+                      kind: next,
+                      label: cur?.label ?? "",
+                      value: cur?.value ?? "",
+                    });
+                }}
+              >
+                <option value="education">学历</option>
+                <option value="min_years">最低年限</option>
+                <option value="location">工作地点</option>
+                <option value="custom">自定义</option>
+              </Select>
+            </div>
+            <div className="col-span-12 md:col-span-4">
+              <Label className="text-xs text-slate-500">说明</Label>
+              <Input
+                placeholder="如：本科及以上"
+                {...register(`criteria.hard.${i}.label` as const)}
+              />
+              <FieldError msg={errors.criteria?.hard?.[i]?.label?.message} />
+            </div>
+            <div className="col-span-12 md:col-span-5">
+              <Label className="text-xs text-slate-500">值</Label>
+              {kind === "education" ? (
+                <Select {...register(`criteria.hard.${i}.value` as const)}>
+                  {EDUCATION_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </Select>
+              ) : kind === "min_years" ? (
+                <Select
+                  {...register(`criteria.hard.${i}.value` as const, {
+                    valueAsNumber: true,
+                  })}
+                >
+                  {MIN_YEARS_OPTIONS.map((y) => (
+                    <option key={y} value={y}>
+                      {y} 年以上
+                    </option>
+                  ))}
+                </Select>
+              ) : (
+                <Input
+                  placeholder={
+                    kind === "location" ? "如：上海" : "填一个简洁的值"
+                  }
+                  {...register(`criteria.hard.${i}.value` as const)}
+                />
+              )}
+              <FieldError msg={errors.criteria?.hard?.[i]?.value?.message} />
+            </div>
+          </Row>
+        );
+      })}
     </Section>
   );
 }

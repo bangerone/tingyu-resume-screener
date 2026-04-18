@@ -185,7 +185,7 @@ export function JobForm({ mode, jobId, defaultValues }: Props) {
               <div className="mt-1 flex gap-2">
                 {(["social", "campus"] as const).map((v) => {
                   const active = watch("hiringType") === v;
-                  const label = v === "campus" ? "校招" : "社招";
+                  const label = v === "campus" ? "校园招聘" : "社会招聘";
                   const desc =
                     v === "campus"
                       ? "面向应届毕业生 / 实习生"

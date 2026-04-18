@@ -44,6 +44,8 @@ ${resumeTextTruncated}
 export const SCORE_SYSTEM = `你是一名严格、公平的招聘评估官。基于「岗位筛选标准」对「候选人结构化简历」打分。
 打分原则：
 1. 先判断硬性要求 (criteria.hard) 是否全部满足。任一未满足 → passed_hard=false，且 total 不超过 50。
+   - 对 kind="education" 的条目，系统已在「educationEvals」里按「博士 > 硕士（含工学硕士/工程硕士/MBA 等学位硕士）> 本科/学士 > 大专 > 高中」的等级规则预判好，你必须直接采用 pass 结果写进 breakdown.hard，不要自己再猜。高等级满足低等级要求（硕士自动满足"本科及以上"）。
+   - 对 kind="min_years" 的条目，拿 candidate total_years 跟 value 数值比，>= 则通过。
 2. criteria.schoolTiers 是学校档次要求，系统已把候选人是否命中各档次算好放在「tierFlags」里（c9/985/211/shuangyiliu/qs50/qs100 的布尔值）。
    - level="must"：tierFlags[tier] 必须为 true，否则视为硬性未通过，passed_hard=false。
    - level="bonus"：tierFlags[tier] 为 true 则加 5 分（最多加 15）。
@@ -59,11 +61,19 @@ export const SCORE_SYSTEM = `你是一名严格、公平的招聘评估官。基
 9. 严禁基于姓名/性别/年龄歧视；学校档次仅在 HR 于 schoolTiers 明确要求时才使用，否则不纳入评估。
 10. 输出严格 JSON，不要 markdown，不要解释。`;
 
+export interface EducationEval {
+  label: string;
+  required: string;
+  candidate_highest: string;
+  pass: boolean;
+}
+
 /** `job` 只取 title / description / criteria 三个字段，避免把无关信息灌进 prompt。 */
 export function scoreUserPrompt(
   job: Pick<Job, "title" | "description" | "criteria">,
   parsed: ParsedResume,
   tierFlags: Record<SchoolTier, boolean>,
+  educationEvals: EducationEval[],
 ): string {
   return `[岗位]
 title: ${job.title}
@@ -77,6 +87,9 @@ ${JSON.stringify(parsed, null, 2)}
 
 [候选人学校档次 tierFlags]
 ${JSON.stringify(tierFlags)}
+
+[学历硬性预判 educationEvals]（系统按「博士>硕士>本科>大专」精确比对，breakdown.hard 的学历条目必须直接用下列 pass）
+${JSON.stringify(educationEvals)}
 
 [Output JSON Schema]
 {

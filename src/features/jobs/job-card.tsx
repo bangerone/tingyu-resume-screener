@@ -28,7 +28,7 @@ export function JobCard({ job }: Props) {
                 : "bg-sky-50 text-sky-700")
             }
           >
-            {isCampus ? "校招" : "社招"}
+            {isCampus ? "校园招聘" : "社会招聘"}
           </span>
           <span className="inline-flex rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
             在招

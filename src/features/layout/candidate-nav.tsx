@@ -53,13 +53,13 @@ export function CandidateNav() {
               href="/jobs?tab=social"
               className="text-slate-600 hover:text-slate-900"
             >
-              社招
+              社会招聘
             </Link>
             <Link
               href="/jobs?tab=campus"
               className="text-slate-600 hover:text-slate-900"
             >
-              校招
+              校园招聘
             </Link>
             {user && (
               <Link
@@ -117,14 +117,14 @@ export function CandidateNav() {
               className="block rounded-md px-3 py-2 text-slate-700 hover:bg-slate-50"
               onClick={() => setOpen(false)}
             >
-              社招
+              社会招聘
             </Link>
             <Link
               href="/jobs?tab=campus"
               className="block rounded-md px-3 py-2 text-slate-700 hover:bg-slate-50"
               onClick={() => setOpen(false)}
             >
-              校招
+              校园招聘
             </Link>
             {user && (
               <Link

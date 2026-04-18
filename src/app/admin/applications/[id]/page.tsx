@@ -67,6 +67,8 @@ export default async function AdminApplicationDetailPage({
 
   const resumeExt =
     app.resumeFileKey.split(".").pop()?.toLowerCase() ?? "";
+  // 自家代理路径：PDF 用它避开 COS disposition + Chrome 下载设置；docx 仍走 Office Viewer 需要公网签名 URL。
+  const resumeProxyUrl = `/api/resume/preview?key=${encodeURIComponent(app.resumeFileKey)}`;
 
   return (
     <div className="space-y-6">
@@ -228,11 +230,26 @@ export default async function AdminApplicationDetailPage({
             {resumeUrl ? (
               <>
                 {resumeExt === "pdf" ? (
-                  <iframe
-                    src={resumeUrl}
+                  // 走自家代理：路由硬编码 Content-Disposition: inline，
+                  // 同时走同源，不被 Chrome 第三方 iframe / 下载设置拦截
+                  <object
+                    data={resumeProxyUrl}
+                    type="application/pdf"
                     className="h-[720px] w-full rounded-md border border-slate-200 bg-white"
-                    title="简历预览"
-                  />
+                    aria-label="简历预览"
+                  >
+                    <div className="flex h-full items-center justify-center rounded-md bg-slate-50 px-6 text-center text-sm text-slate-600">
+                      浏览器未能内嵌 PDF，请
+                      <a
+                        href={resumeProxyUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="mx-1 text-brand-600 underline"
+                      >
+                        新标签页打开
+                      </a>
+                    </div>
+                  </object>
                 ) : ["doc", "docx"].includes(resumeExt) ? (
                   // Microsoft Office Online Viewer —— 要求 src 是可公开访问的临时签名 URL
                   <iframe
