@@ -26,7 +26,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { apiJson } from "@/lib/api";
 import { toast } from "@/components/ui/toast";
-import { CriteriaEditor } from "./criteria-editor";
+import { CriteriaEditor, itemKey } from "./criteria-editor";
 import { JdToCriteria } from "./jd-to-criteria";
 import {
   emptyJobInput,
@@ -44,6 +44,7 @@ interface Props {
 export function JobForm({ mode, jobId, defaultValues }: Props) {
   const router = useRouter();
   const [submitting, setSubmitting] = useState<"draft" | "open" | null>(null);
+  const [justAddedKeys, setJustAddedKeys] = useState<Set<string>>(new Set());
 
   const {
     register,
@@ -52,6 +53,7 @@ export function JobForm({ mode, jobId, defaultValues }: Props) {
     watch,
     setValue,
     getValues,
+    reset,
     formState: { errors },
   } = useForm<JobInput>({
     resolver: zodResolver(jobInputSchema),
@@ -67,34 +69,52 @@ export function JobForm({ mode, jobId, defaultValues }: Props) {
       skills: [],
       bonus: [],
       custom: [],
+      schoolTiers: [],
     };
+    const curSchoolTiers = cur.schoolTiers ?? [];
+    const genSchoolTiers = gen.schoolTiers ?? [];
     const seen = {
       hard: new Set(cur.hard.map((h) => `${h.kind}|${h.label}`)),
       skills: new Set(cur.skills.map((s) => s.name.toLowerCase())),
       bonus: new Set(cur.bonus),
       custom: new Set(cur.custom.map((c) => c.name)),
+      schoolTiers: new Set(curSchoolTiers.map((t) => t.tier)),
     };
+    const newHard = gen.hard.filter(
+      (h) => !seen.hard.has(`${h.kind}|${h.label}`),
+    );
+    const newSkills = gen.skills.filter(
+      (s) => !seen.skills.has(s.name.toLowerCase()),
+    );
+    const newBonus = gen.bonus.filter((b) => !seen.bonus.has(b));
+    const newCustom = gen.custom.filter((c) => !seen.custom.has(c.name));
+    const newSchoolTiers = genSchoolTiers.filter(
+      (t) => !seen.schoolTiers.has(t.tier),
+    );
+
     const merged: ScreeningCriteria = {
-      hard: [
-        ...cur.hard,
-        ...gen.hard.filter(
-          (h) => !seen.hard.has(`${h.kind}|${h.label}`),
-        ),
-      ],
-      skills: [
-        ...cur.skills,
-        ...gen.skills.filter((s) => !seen.skills.has(s.name.toLowerCase())),
-      ],
-      bonus: [
-        ...cur.bonus,
-        ...gen.bonus.filter((b) => !seen.bonus.has(b)),
-      ],
-      custom: [
-        ...cur.custom,
-        ...gen.custom.filter((c) => !seen.custom.has(c.name)),
-      ],
+      hard: [...cur.hard, ...newHard],
+      skills: [...cur.skills, ...newSkills],
+      bonus: [...cur.bonus, ...newBonus],
+      custom: [...cur.custom, ...newCustom],
+      schoolTiers: [...curSchoolTiers, ...newSchoolTiers],
     };
+    // setValue 不会同步 useFieldArray 内部 fields（RHF 已知限制），用 reset 强制重挂；
+    // keepDefaultValues 避免污染 "dirty" 基准；其它字段从 getValues 原样带回。
+    reset(
+      { ...getValues(), criteria: merged },
+      { keepDefaultValues: true, keepErrors: true, keepTouched: true },
+    );
     setValue("criteria", merged, { shouldDirty: true });
+
+    // 给新增项打「AI 新增」标记，用户一编辑即自动消失
+    const keys = new Set<string>();
+    newHard.forEach((x) => keys.add(itemKey(x)));
+    newSkills.forEach((x) => keys.add(itemKey(x)));
+    newBonus.forEach((x) => keys.add(itemKey(x)));
+    newCustom.forEach((x) => keys.add(itemKey(x)));
+    newSchoolTiers.forEach((x) => keys.add(itemKey(x)));
+    setJustAddedKeys(keys);
   }
 
   async function save(target: "draft" | "open") {
@@ -232,6 +252,7 @@ export function JobForm({ mode, jobId, defaultValues }: Props) {
             control={control}
             register={register}
             errors={errors}
+            justAddedKeys={justAddedKeys}
           />
         </CardContent>
       </Card>

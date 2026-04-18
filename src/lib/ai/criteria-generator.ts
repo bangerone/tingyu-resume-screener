@@ -38,6 +38,12 @@ const SYSTEM = `你是一名资深招聘专家。任务：把 HR 贴的「岗位
 3. bonus 是非技术性的加分项：大厂背景 / 博客 / 开源贡献 / 竞赛获奖 / 独立作品等。
 4. custom 填 JD 里提到、但不属于 hard/skills/bonus 的软性考察点：沟通能力、主动性、
    抗压、跨团队协作、业务理解等。每条给 description 告诉评估 AI 怎么判断。
+5. schoolTiers 是**学校档次**要求。只在 JD 明确提及时才填，不要主观发挥。
+   - tier 枚举（**必须全部小写**）：c9 / 985 / 211 / shuangyiliu / qs50 / qs100。
+     · "C9" 写成 "c9"，"QS50/QS100" 写成 "qs50/qs100"，"双一流" 写成 "shuangyiliu"。
+   - level="must"：JD 里写「只招 985/211」「仅 C9」等强制措辞 → 硬性。
+   - level="bonus"：JD 里写「985/211 优先」「QS100 加分」「重点院校优先」等软性措辞 → 加分。
+   - 不要把「本科及以上」之类的学历条件放这里（那是 hard.education）。
 
 输出约束：
 - 严格 JSON，不要 markdown code block，不要解释。
@@ -56,7 +62,8 @@ ${jd}
   "hard": [{"kind":"education|min_years|location|custom","label":"string","value":"string or number"}],
   "skills": [{"name":"string","weight":1-5,"level":"must|preferred"}],
   "bonus": ["string"],
-  "custom": [{"name":"string","weight":1-5,"description":"string"}]
+  "custom": [{"name":"string","weight":1-5,"description":"string"}],
+  "schoolTiers": [{"tier":"c9|985|211|shuangyiliu|qs50|qs100","level":"must|bonus"}]
 }`;
 }
 

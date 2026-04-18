@@ -410,8 +410,23 @@ export function ApplyForm({ jobId, jobTitle, defaultEmail }: Props) {
               {...register("candidateName")}
             />
           </Field>
-          <Field label="邮箱" hint="已通过邮箱登录">
-            <Input value={defaultEmail} disabled readOnly />
+          <Field label="联系邮箱" required hint="默认为登录邮箱，可修改">
+            <Input
+              type="email"
+              placeholder="name@example.com"
+              {...register("parsedResume.email", {
+                required: "请填写联系邮箱",
+                pattern: {
+                  value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                  message: "邮箱格式不正确",
+                },
+              })}
+            />
+            {errors.parsedResume?.email && (
+              <p className="mt-1 text-xs text-rose-600">
+                {errors.parsedResume.email.message as string}
+              </p>
+            )}
           </Field>
           <Field label="手机号" required>
             <Input

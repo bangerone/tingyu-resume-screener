@@ -27,6 +27,13 @@ export interface SkillRequirement {
   level: "must" | "preferred";
 }
 
+/** 学校档次要求 —— level=must 视为硬性（不中断则 passed_hard=false），
+ *  level=bonus 命中加分。匹配由 lib/ai/school-tiers.ts 完成，LLM 只看 tierFlags。 */
+export interface SchoolTierRequirement {
+  tier: "c9" | "985" | "211" | "shuangyiliu" | "qs50" | "qs100";
+  level: "must" | "bonus";
+}
+
 export interface ScreeningCriteria {
   hard: HardRequirement[];
   skills: SkillRequirement[];
@@ -34,6 +41,8 @@ export interface ScreeningCriteria {
   bonus: string[];
   /** custom weighted dimensions HR cares about */
   custom: { name: string; weight: number; description: string }[];
+  /** 学校档次（C9/985/211/双一流/QS50/QS100），系统做匹配 */
+  schoolTiers: SchoolTierRequirement[];
 }
 
 // 注意：完整的 Job / Application / Candidate row 类型从 db/schema.ts 推断：

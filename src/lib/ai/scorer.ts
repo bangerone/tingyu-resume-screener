@@ -10,6 +10,7 @@ import { z } from "zod";
 import { getAiClient, AI_MODELS } from "./provider";
 import { SCORE_SYSTEM, scoreUserPrompt } from "./prompts";
 import { scoreResultAiSchema } from "./schemas";
+import { detectSchoolTiers, type SchoolTier } from "./school-tiers";
 import type { Job } from "@/lib/db/schema";
 import type { ParsedResume, ScoreResult } from "@/types";
 
@@ -27,6 +28,7 @@ const REQUEST_TIMEOUT_MS = 60_000;
 async function callScoreOnce(
   job: Pick<Job, "title" | "description" | "criteria">,
   parsed: ParsedResume,
+  tierFlags: Record<SchoolTier, boolean>,
   retryHint?: string,
 ): Promise<unknown> {
   const client = getAiClient();
@@ -41,7 +43,7 @@ async function callScoreOnce(
       response_format: { type: "json_object" },
       messages: [
         { role: "system", content: system },
-        { role: "user", content: scoreUserPrompt(job, parsed) },
+        { role: "user", content: scoreUserPrompt(job, parsed, tierFlags) },
       ],
     },
     { timeout: REQUEST_TIMEOUT_MS },
@@ -80,11 +82,16 @@ export async function scoreResume(
   parsed: ParsedResume,
   job: Pick<Job, "title" | "description" | "criteria">,
 ): Promise<ScoreResult> {
+  // 候选人学校 × 档次名单在本地做匹配，不让 LLM 猜 —— 既准又省 token
+  const tierFlags = detectSchoolTiers(
+    (parsed.education ?? []).map((e) => e.school),
+  );
+
   let lastErr: string | undefined;
   for (let attempt = 0; attempt < 2; attempt++) {
     let json: unknown;
     try {
-      json = await callScoreOnce(job, parsed, lastErr);
+      json = await callScoreOnce(job, parsed, tierFlags, lastErr);
     } catch (e) {
       if (e instanceof AiScoreError) {
         lastErr = e.message + (e.detail ? ` (${e.detail})` : "");

@@ -31,11 +31,21 @@ export const customDimensionSchema = z.object({
   description: z.string().default(""),
 });
 
+const toLower = (v: unknown) => (typeof v === "string" ? v.toLowerCase() : v);
+export const schoolTierSchema = z.object({
+  tier: z.preprocess(
+    toLower,
+    z.enum(["c9", "985", "211", "shuangyiliu", "qs50", "qs100"]),
+  ),
+  level: z.preprocess(toLower, z.enum(["must", "bonus"])),
+});
+
 export const screeningCriteriaSchema = z.object({
   hard: z.array(hardRequirementSchema).default([]),
   skills: z.array(skillRequirementSchema).default([]),
   bonus: z.array(z.string().min(1)).default([]),
   custom: z.array(customDimensionSchema).default([]),
+  schoolTiers: z.array(schoolTierSchema).default([]),
 });
 
 export const jobStatusSchema = z.enum(["draft", "open", "closed"]);
@@ -62,6 +72,7 @@ export const emptyCriteria = {
   skills: [],
   bonus: [],
   custom: [],
+  schoolTiers: [],
 };
 
 export const emptyJobInput: JobInput = {

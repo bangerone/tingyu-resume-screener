@@ -3,15 +3,20 @@
 // ============================================================
 // CriteriaEditor —— 筛选标准结构化编辑器
 // ============================================================
-// 由 JobForm 内嵌；通过 react-hook-form 的 useFieldArray 管理四个列表。
+// 由 JobForm 内嵌；通过 react-hook-form 的 useFieldArray 管理五个列表：
+// hard / skills / bonus / custom / schoolTiers。
 // 输出形状符合 ScreeningCriteria (见 src/types/index.ts)。
 //
-// D6：新增「常用标签库」快捷按钮 —— 一键追加常见学历/年限/技能/加分项。
+// 「AI 新增」高亮：mergeGeneratedCriteria 后，父组件把新增项的 key
+// （JSON.stringify 形式）塞进 justAddedKeys。本组件在渲染时对每行计算
+// 同样的 key；若命中则加琥珀色左侧色条 + 「AI 新增」pill。用户开始编辑
+// 该项后 key 变化，高亮自动消失。
 // ============================================================
 
-import { Plus, Trash2, Sparkles } from "lucide-react";
+import { Plus, Trash2, Sparkles, GraduationCap } from "lucide-react";
 import {
   useFieldArray,
+  useWatch,
   type Control,
   type UseFormRegister,
   type FieldErrors,
@@ -21,12 +26,20 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { SCHOOL_TIER_LABELS, type SchoolTier } from "@/lib/ai/school-tiers";
 import type { JobInput } from "./job-schema";
 
 interface Props {
   control: Control<JobInput>;
   register: UseFormRegister<JobInput>;
   errors: FieldErrors<JobInput>;
+  justAddedKeys?: Set<string>;
+}
+
+/** 生成用于高亮匹配的稳定 key —— 内容变则 key 变 → 用户一动手高亮就消失。 */
+export function itemKey(item: unknown): string {
+  if (typeof item === "string") return `s:${item}`;
+  return `o:${JSON.stringify(item)}`;
 }
 
 // ---------- preset 标签库 ----------
@@ -75,26 +88,66 @@ const BONUS_PRESETS = [
   "有独立作品",
 ];
 
+const SCHOOL_TIER_PRESETS: { tier: SchoolTier; hint: string }[] = [
+  { tier: "c9", hint: "清北复交浙南中科大哈工大西交" },
+  { tier: "985", hint: "39 所" },
+  { tier: "211", hint: "约 116 所" },
+  { tier: "shuangyiliu", hint: "约 147 所" },
+  { tier: "qs50", hint: "2026 全球前 50" },
+  { tier: "qs100", hint: "2026 全球前 100" },
+];
+
 // ---------- 主组件 ----------
 
-export function CriteriaEditor({ control, register, errors }: Props) {
+export function CriteriaEditor({
+  control,
+  register,
+  errors,
+  justAddedKeys,
+}: Props) {
   return (
     <div className="space-y-6">
-      <HardList control={control} register={register} errors={errors} />
-      <SkillList control={control} register={register} errors={errors} />
-      <BonusList control={control} register={register} />
-      <CustomList control={control} register={register} errors={errors} />
+      <HardList
+        control={control}
+        register={register}
+        errors={errors}
+        justAddedKeys={justAddedKeys}
+      />
+      <SkillList
+        control={control}
+        register={register}
+        errors={errors}
+        justAddedKeys={justAddedKeys}
+      />
+      <SchoolTierList control={control} justAddedKeys={justAddedKeys} />
+      <BonusList
+        control={control}
+        register={register}
+        justAddedKeys={justAddedKeys}
+      />
+      <CustomList
+        control={control}
+        register={register}
+        errors={errors}
+        justAddedKeys={justAddedKeys}
+      />
     </div>
   );
 }
 
 // -------------------- Hard requirements --------------------
 
-function HardList({ control, register, errors }: Props) {
+function HardList({
+  control,
+  register,
+  errors,
+  justAddedKeys,
+}: Props) {
   const { fields, append, remove } = useFieldArray({
     control,
     name: "criteria.hard",
   });
+  const watched = useWatch({ control, name: "criteria.hard" }) ?? [];
 
   return (
     <Section
@@ -118,7 +171,13 @@ function HardList({ control, register, errors }: Props) {
     >
       {fields.length === 0 && <Empty text="暂无硬性要求" />}
       {fields.map((f, i) => (
-        <Row key={f.id} onRemove={() => remove(i)}>
+        <Row
+          key={f.id}
+          onRemove={() => remove(i)}
+          highlight={
+            justAddedKeys?.has(itemKey(watched[i] ?? {})) ?? false
+          }
+        >
           <div className="col-span-12 md:col-span-3">
             <Label className="text-xs text-slate-500">类别</Label>
             <Select {...register(`criteria.hard.${i}.kind` as const)}>
@@ -152,11 +211,17 @@ function HardList({ control, register, errors }: Props) {
 
 // -------------------- Skills --------------------
 
-function SkillList({ control, register, errors }: Props) {
+function SkillList({
+  control,
+  register,
+  errors,
+  justAddedKeys,
+}: Props) {
   const { fields, append, remove } = useFieldArray({
     control,
     name: "criteria.skills",
   });
+  const watched = useWatch({ control, name: "criteria.skills" }) ?? [];
 
   return (
     <Section
@@ -180,7 +245,13 @@ function SkillList({ control, register, errors }: Props) {
     >
       {fields.length === 0 && <Empty text="暂无技能要求" />}
       {fields.map((f, i) => (
-        <Row key={f.id} onRemove={() => remove(i)}>
+        <Row
+          key={f.id}
+          onRemove={() => remove(i)}
+          highlight={
+            justAddedKeys?.has(itemKey(watched[i] ?? {})) ?? false
+          }
+        >
           <div className="col-span-12 md:col-span-6">
             <Label className="text-xs text-slate-500">技能</Label>
             <Input
@@ -216,18 +287,125 @@ function SkillList({ control, register, errors }: Props) {
   );
 }
 
+// -------------------- School tier --------------------
+
+function SchoolTierList({
+  control,
+  justAddedKeys,
+}: {
+  control: Control<JobInput>;
+  justAddedKeys?: Set<string>;
+}) {
+  const { fields, append, remove, update } = useFieldArray({
+    control,
+    name: "criteria.schoolTiers",
+  });
+  const watched = useWatch({ control, name: "criteria.schoolTiers" }) ?? [];
+
+  // 已选的 tier 集合，防止重复添加
+  const takenTiers = new Set(watched.map((x) => x.tier));
+
+  return (
+    <Section
+      icon={<GraduationCap className="h-4 w-4 text-brand-600" />}
+      title="学校档次"
+      hint="系统自动匹配 C9/985/211/双一流/QS50/QS100，HR 无需维护学校名单。"
+      onAdd={() => {
+        const next = SCHOOL_TIER_PRESETS.find(
+          (p) => !takenTiers.has(p.tier),
+        )?.tier;
+        if (next) append({ tier: next, level: "bonus" });
+      }}
+      presets={
+        <PresetBar>
+          {SCHOOL_TIER_PRESETS.map((p) => (
+            <PresetChip
+              key={p.tier}
+              disabled={takenTiers.has(p.tier)}
+              onClick={() => append({ tier: p.tier, level: "bonus" })}
+              title={p.hint}
+            >
+              {SCHOOL_TIER_LABELS[p.tier]}
+            </PresetChip>
+          ))}
+        </PresetBar>
+      }
+    >
+      {fields.length === 0 && (
+        <Empty text="暂无学校档次要求（可直接点上面的快捷按钮添加）" />
+      )}
+      {fields.map((f, i) => {
+        const cur = watched[i];
+        if (!cur) return null;
+        const highlight =
+          justAddedKeys?.has(itemKey(cur)) ?? false;
+        return (
+          <Row
+            key={f.id}
+            onRemove={() => remove(i)}
+            highlight={highlight}
+          >
+            <div className="col-span-12 md:col-span-6 flex items-center gap-2">
+              <span className="inline-flex h-8 items-center rounded-md bg-brand-50 px-3 text-sm font-medium text-brand-700">
+                {SCHOOL_TIER_LABELS[cur.tier]}
+              </span>
+              <span className="text-xs text-slate-500">
+                候选人教育经历里任一所学校命中该档即生效
+              </span>
+            </div>
+            <div className="col-span-12 md:col-span-6">
+              <div className="flex gap-2">
+                {(["bonus", "must"] as const).map((lvl) => {
+                  const active = cur.level === lvl;
+                  return (
+                    <button
+                      key={lvl}
+                      type="button"
+                      onClick={() =>
+                        update(i, { tier: cur.tier, level: lvl })
+                      }
+                      className={
+                        "flex-1 rounded-md border px-3 py-1.5 text-xs transition " +
+                        (active
+                          ? lvl === "must"
+                            ? "border-rose-500 bg-rose-50 text-rose-700"
+                            : "border-brand-500 bg-brand-50 text-brand-700"
+                          : "border-slate-200 bg-white text-slate-600 hover:border-brand-300")
+                      }
+                    >
+                      {lvl === "must" ? "硬性要求" : "加分项"}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </Row>
+        );
+      })}
+    </Section>
+  );
+}
+
 // -------------------- Bonus (string chips) --------------------
 
 function BonusList({
   control,
   register,
-}: Pick<Props, "control" | "register">) {
+  justAddedKeys,
+}: {
+  control: Control<JobInput>;
+  register: UseFormRegister<JobInput>;
+  justAddedKeys?: Set<string>;
+}) {
   const { fields, append, remove } = useFieldArray({
     control,
     // useFieldArray 要 object 形的 name，但 criteria.bonus 是 string[]
     // 这里用类型断言 —— RHF 对 primitive array 的支持通过 `as never`
     name: "criteria.bonus" as never,
   });
+  const watched =
+    (useWatch({ control, name: "criteria.bonus" }) as string[] | undefined) ??
+    [];
 
   return (
     <Section
@@ -246,7 +424,13 @@ function BonusList({
     >
       {fields.length === 0 && <Empty text="暂无加分项" />}
       {fields.map((f, i) => (
-        <Row key={f.id} onRemove={() => remove(i)}>
+        <Row
+          key={f.id}
+          onRemove={() => remove(i)}
+          highlight={
+            justAddedKeys?.has(itemKey(watched[i] ?? "")) ?? false
+          }
+        >
           <div className="col-span-12">
             <Input
               placeholder="如：有技术博客 / 曾贡献开源"
@@ -261,11 +445,17 @@ function BonusList({
 
 // -------------------- Custom dimensions --------------------
 
-function CustomList({ control, register, errors }: Props) {
+function CustomList({
+  control,
+  register,
+  errors,
+  justAddedKeys,
+}: Props) {
   const { fields, append, remove } = useFieldArray({
     control,
     name: "criteria.custom",
   });
+  const watched = useWatch({ control, name: "criteria.custom" }) ?? [];
 
   return (
     <Section
@@ -275,11 +465,17 @@ function CustomList({ control, register, errors }: Props) {
     >
       {fields.length === 0 && <Empty text="暂无自定义维度" />}
       {fields.map((f, i) => (
-        <Row key={f.id} onRemove={() => remove(i)}>
+        <Row
+          key={f.id}
+          onRemove={() => remove(i)}
+          highlight={
+            justAddedKeys?.has(itemKey(watched[i] ?? {})) ?? false
+          }
+        >
           <div className="col-span-12 md:col-span-5">
             <Label className="text-xs text-slate-500">名称</Label>
             <Input
-              placeholder="如：文化契合度"
+              placeholder="如:文化契合度"
               {...register(`criteria.custom.${i}.name` as const)}
             />
             <FieldError
@@ -319,12 +515,14 @@ function CustomList({ control, register, errors }: Props) {
 function Section({
   title,
   hint,
+  icon,
   onAdd,
   presets,
   children,
 }: {
   title: string;
   hint?: string;
+  icon?: React.ReactNode;
   onAdd: () => void;
   presets?: React.ReactNode;
   children: React.ReactNode;
@@ -332,9 +530,12 @@ function Section({
   return (
     <div className="rounded-lg border border-slate-200 bg-slate-50/50 p-4">
       <div className="mb-3 flex items-start justify-between gap-3">
-        <div>
-          <h3 className="text-sm font-semibold text-slate-900">{title}</h3>
-          {hint && <p className="mt-0.5 text-xs text-slate-500">{hint}</p>}
+        <div className="flex items-start gap-2">
+          {icon}
+          <div>
+            <h3 className="text-sm font-semibold text-slate-900">{title}</h3>
+            {hint && <p className="mt-0.5 text-xs text-slate-500">{hint}</p>}
+          </div>
         </div>
         <Button type="button" size="sm" variant="outline" onClick={onAdd}>
           <Plus className="h-4 w-4" /> 添加
@@ -360,17 +561,29 @@ function PresetBar({ children }: { children: React.ReactNode }) {
 function PresetChip({
   children,
   onClick,
+  disabled,
+  title,
 }: {
   children: React.ReactNode;
   onClick: () => void;
+  disabled?: boolean;
+  title?: string;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs text-slate-700 transition hover:border-brand-400 hover:bg-brand-50 hover:text-brand-700"
+      disabled={disabled}
+      title={title}
+      className={
+        "rounded-full border px-2.5 py-1 text-xs transition " +
+        (disabled
+          ? "cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400"
+          : "border-slate-200 bg-white text-slate-700 hover:border-brand-400 hover:bg-brand-50 hover:text-brand-700")
+      }
     >
-      + {children}
+      {disabled ? "✓ " : "+ "}
+      {children}
     </button>
   );
 }
@@ -378,12 +591,32 @@ function PresetChip({
 function Row({
   children,
   onRemove,
+  highlight,
 }: {
   children: React.ReactNode;
   onRemove: () => void;
+  highlight?: boolean;
 }) {
   return (
-    <div className="grid grid-cols-12 gap-3 rounded-md border border-slate-200 bg-white p-3">
+    <div
+      className={
+        "relative grid grid-cols-12 gap-3 rounded-md border bg-white p-3 " +
+        (highlight
+          ? "border-amber-300 bg-amber-50/40 ring-1 ring-amber-200"
+          : "border-slate-200")
+      }
+    >
+      {highlight && (
+        <>
+          <span
+            aria-hidden
+            className="absolute inset-y-0 left-0 w-[3px] rounded-l-md bg-amber-400"
+          />
+          <span className="absolute right-3 top-2 inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-800">
+            <Sparkles className="h-2.5 w-2.5" /> AI 新增
+          </span>
+        </>
+      )}
       {children}
       <div className="col-span-12 flex justify-end">
         <Button
