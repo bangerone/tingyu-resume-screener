@@ -49,8 +49,17 @@ export function CandidateNav() {
 
           {/* 桌面菜单 */}
           <div className="hidden items-center gap-4 text-sm sm:flex">
-            <Link href="/jobs" className="text-slate-600 hover:text-slate-900">
-              在招岗位
+            <Link
+              href="/jobs?tab=social"
+              className="text-slate-600 hover:text-slate-900"
+            >
+              社招
+            </Link>
+            <Link
+              href="/jobs?tab=campus"
+              className="text-slate-600 hover:text-slate-900"
+            >
+              校招
             </Link>
             {user && (
               <Link
@@ -104,11 +113,18 @@ export function CandidateNav() {
         >
           <div className="space-y-1 px-4 py-3 text-sm">
             <Link
-              href="/jobs"
+              href="/jobs?tab=social"
               className="block rounded-md px-3 py-2 text-slate-700 hover:bg-slate-50"
               onClick={() => setOpen(false)}
             >
-              在招岗位
+              社招
+            </Link>
+            <Link
+              href="/jobs?tab=campus"
+              className="block rounded-md px-3 py-2 text-slate-700 hover:bg-slate-50"
+              onClick={() => setOpen(false)}
+            >
+              校招
             </Link>
             {user && (
               <Link

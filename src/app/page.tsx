@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { desc, eq } from "drizzle-orm";
-import { Briefcase, Sparkles } from "lucide-react";
+import { Briefcase } from "lucide-react";
 import { db } from "@/lib/db/client";
 import { jobs, type Job } from "@/lib/db/schema";
 import { JobCard } from "@/features/jobs";
@@ -35,10 +35,6 @@ export default async function HomePage() {
           aria-hidden
         />
         <div className="relative mx-auto max-w-6xl px-6 py-20 text-center">
-          <div className="mx-auto mb-6 inline-flex items-center gap-2 rounded-full border border-brand-100 bg-white/70 px-3 py-1 text-xs font-medium text-brand-700 backdrop-blur">
-            <Sparkles className="h-3.5 w-3.5" />
-            AI 自动解析简历 · 一键投递
-          </div>
           <h1 className="text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl">
             在庭宇科技，跟优秀的人
             <br className="sm:hidden" />

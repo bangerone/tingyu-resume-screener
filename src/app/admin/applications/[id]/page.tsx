@@ -233,6 +233,13 @@ export default async function AdminApplicationDetailPage({
                     className="h-[720px] w-full rounded-md border border-slate-200 bg-white"
                     title="简历预览"
                   />
+                ) : ["doc", "docx"].includes(resumeExt) ? (
+                  // Microsoft Office Online Viewer —— 要求 src 是可公开访问的临时签名 URL
+                  <iframe
+                    src={`https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(resumeUrl)}`}
+                    className="h-[720px] w-full rounded-md border border-slate-200 bg-white"
+                    title="简历预览"
+                  />
                 ) : (
                   <div className="rounded-md bg-slate-50 px-3 py-4 text-sm text-slate-600">
                     该格式不支持浏览器内嵌预览，请点击下方按钮下载原件。
