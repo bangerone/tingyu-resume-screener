@@ -42,8 +42,7 @@ export default async function HomePage() {
             一起做有价值的产品
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-lg text-slate-600">
-            我们正在招聘下面这些岗位。投递简历后，AI
-            会自动解析并帮你完成申请表，你只需检查确认即可。
+            我们正在招聘下面这些岗位，期待与你共创。
           </p>
           <div className="mt-8 flex justify-center gap-3">
             <Link

@@ -24,6 +24,12 @@ export const projectItemSchema = z.object({
   summary: z.string().default(""),
 });
 
+export const awardItemSchema = z.object({
+  title: z.string().default(""),
+  date: z.string().default(""),
+  description: z.string().default(""),
+});
+
 export const parsedResumeSchema = z.object({
   name: z.string().default(""),
   email: z.string().default(""),
@@ -41,6 +47,7 @@ export const parsedResumeSchema = z.object({
   experience: z.array(experienceItemSchema).default([]),
   skills: z.array(z.string()).default([]),
   projects: z.array(projectItemSchema).default([]),
+  awards: z.array(awardItemSchema).default([]),
   raw_text: z.string().default(""),
 });
 

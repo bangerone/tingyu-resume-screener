@@ -29,6 +29,7 @@ import {
   Wrench,
   Target,
   MessageSquare,
+  Award,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -93,6 +94,7 @@ export function ApplyForm({ jobId, jobTitle, defaultEmail }: Props) {
       experience: [],
       skills: [],
       projects: [],
+      awards: [],
       raw_text: "",
     },
   };
@@ -113,6 +115,7 @@ export function ApplyForm({ jobId, jobTitle, defaultEmail }: Props) {
   const eduArr = useFieldArray({ control, name: "parsedResume.education" });
   const expArr = useFieldArray({ control, name: "parsedResume.experience" });
   const projArr = useFieldArray({ control, name: "parsedResume.projects" });
+  const awardArr = useFieldArray({ control, name: "parsedResume.awards" });
 
   const [skills, setSkills] = useState<string[]>([]);
   const [skillInput, setSkillInput] = useState("");
@@ -446,15 +449,14 @@ export function ApplyForm({ jobId, jobTitle, defaultEmail }: Props) {
                   options={[
                     { value: "男", label: "男" },
                     { value: "女", label: "女" },
-                    { value: "保密", label: "保密" },
                   ]}
                 />
               )}
             />
           </Field>
-          <Field label="出生年月">
+          <Field label="出生年月日">
             <Input
-              type="month"
+              type="date"
               {...register("parsedResume.birth_date")}
             />
           </Field>
@@ -693,7 +695,70 @@ export function ApplyForm({ jobId, jobTitle, defaultEmail }: Props) {
         </div>
       </SectionCard>
 
-      {/* ========== 5. 技能 ========== */}
+      {/* ========== 5. 获奖记录 ========== */}
+      <SectionCard
+        icon={<Award className="h-4 w-4" />}
+        title="获奖记录"
+        description="竞赛、奖学金、荣誉称号……选填"
+      >
+        <div className="space-y-4">
+          {awardArr.fields.length === 0 && (
+            <p className="rounded-md border border-dashed border-slate-200 bg-slate-50 py-6 text-center text-xs text-slate-500">
+              暂无获奖记录？可跳过本项
+            </p>
+          )}
+          {awardArr.fields.map((f, i) => (
+            <div
+              key={f.id}
+              className="grid grid-cols-1 gap-3 rounded-lg border border-slate-200 bg-slate-50/30 p-4 md:grid-cols-2"
+            >
+              <Field label="奖项名称">
+                <Input
+                  placeholder="如 国家奖学金 / ACM-ICPC 银奖"
+                  {...register(`parsedResume.awards.${i}.title`)}
+                />
+              </Field>
+              <Field label="获奖时间" hint="如 2023.06">
+                <Input
+                  placeholder="2023.06"
+                  {...register(`parsedResume.awards.${i}.date`)}
+                />
+              </Field>
+              <div className="md:col-span-2">
+                <Field label="说明" hint="选填，简要描述奖项级别和意义">
+                  <Textarea
+                    rows={2}
+                    placeholder="如 全国性学科竞赛，年度获奖率 < 5%"
+                    {...register(`parsedResume.awards.${i}.description`)}
+                  />
+                </Field>
+              </div>
+              <div className="md:col-span-2 flex justify-end">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => awardArr.remove(i)}
+                >
+                  <Trash2 className="h-3.5 w-3.5" /> 删除此条
+                </Button>
+              </div>
+            </div>
+          ))}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() =>
+              awardArr.append({ title: "", date: "", description: "" })
+            }
+          >
+            <Plus className="h-3.5 w-3.5" /> 添加获奖记录
+          </Button>
+        </div>
+      </SectionCard>
+
+      {/* ========== 6. 技能 ========== */}
       <SectionCard
         icon={<Wrench className="h-4 w-4" />}
         title="专业技能"

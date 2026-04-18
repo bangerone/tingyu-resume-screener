@@ -73,6 +73,7 @@ export interface ParsedResume {
   }[];
   skills: string[];
   projects: { name: string; role: string; summary: string }[];
+  awards?: { title: string; date: string; description: string }[];
   raw_text: string;
 }
 
