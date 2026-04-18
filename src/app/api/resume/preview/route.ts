@@ -31,10 +31,9 @@ export async function GET(req: NextRequest) {
     const buf = await downloadResume(key);
     const ext = key.split(".").pop()?.toLowerCase() ?? "";
     const mime = MIME[ext] ?? "application/octet-stream";
-    // Blob 是最兼容的 BodyInit —— 既不踩 Buffer/Uint8Array 在 NextResponse 类型里的坑，
-    // 也能直接设 MIME（不过 header 另外再设一遍）。
-    const body = new Blob([buf], { type: mime });
-    return new NextResponse(body, {
+    // Node Buffer 运行时就是合法 BodyInit（Uint8Array 子类），但 TS 5.x 对
+    // ArrayBuffer vs SharedArrayBuffer 收紧了类型——直接 cast 绕过，零拷贝。
+    return new NextResponse(buf as unknown as BodyInit, {
       status: 200,
       headers: {
         "content-type": mime,
