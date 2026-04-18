@@ -44,15 +44,15 @@ export default function WelcomePage({ searchParams }: Props) {
         </div>
 
         <h1 className="text-lg font-semibold text-slate-900">
-          请使用面试官发送的链接进入演示环境
+          请输入访问码进入演示环境
         </h1>
         <p className="mt-2 text-sm leading-relaxed text-slate-500">
-          这是一个面向面试官的在线 demo。为避免数据污染与资源滥用，访问需要一个短期访问码。
+          这是一个面试作业的在线 demo。为避免数据污染与资源滥用，访问需要一个短期访问码。
         </p>
 
         {attemptedWrong && (
           <div className="mt-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-            访问码不正确，请向面试官确认后重试。
+            访问码不正确，请核对后重试。
           </div>
         )}
 
