@@ -29,10 +29,11 @@ export async function GET(req: NextRequest) {
   }
   try {
     const buf = await downloadResume(key);
-    // Next.js 的 Response/NextResponse 只接 BodyInit；Node Buffer 要转成 Uint8Array
-    const body = new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength);
     const ext = key.split(".").pop()?.toLowerCase() ?? "";
     const mime = MIME[ext] ?? "application/octet-stream";
+    // Blob 是最兼容的 BodyInit —— 既不踩 Buffer/Uint8Array 在 NextResponse 类型里的坑，
+    // 也能直接设 MIME（不过 header 另外再设一遍）。
+    const body = new Blob([buf], { type: mime });
     return new NextResponse(body, {
       status: 200,
       headers: {
