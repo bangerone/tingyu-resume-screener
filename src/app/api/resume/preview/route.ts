@@ -29,9 +29,11 @@ export async function GET(req: NextRequest) {
   }
   try {
     const buf = await downloadResume(key);
+    // Next.js 的 Response/NextResponse 只接 BodyInit；Node Buffer 要转成 Uint8Array
+    const body = new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength);
     const ext = key.split(".").pop()?.toLowerCase() ?? "";
     const mime = MIME[ext] ?? "application/octet-stream";
-    return new NextResponse(buf, {
+    return new NextResponse(body, {
       status: 200,
       headers: {
         "content-type": mime,
