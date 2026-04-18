@@ -17,6 +17,9 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { formatDateTime } from "@/lib/utils";
 import type { ApplicationStatus } from "@/types";
 import { MyApplicationsLogin } from "./_login";
+import { WithdrawButton } from "./withdraw-button";
+
+const MAX_APPLICATIONS = 2;
 
 export const dynamic = "force-dynamic";
 
@@ -86,8 +89,13 @@ export default async function MyApplicationsPage() {
         <header className="mb-8">
           <h1 className="text-2xl font-semibold text-slate-900">我的投递</h1>
           <p className="mt-1 text-sm text-slate-500">
-            共 {rows.length} 条记录 · 评估中的投递结果 HR 会邮件/电话通知你
+            共 {rows.length} / {MAX_APPLICATIONS} 份投递 · 评估中的投递结果 HR 会邮件/电话通知你
           </p>
+          {rows.length >= MAX_APPLICATIONS && (
+            <p className="mt-2 rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-700">
+              已达到最多 {MAX_APPLICATIONS} 份投递上限。如需投递新岗位，先撤回下面一份即可。
+            </p>
+          )}
         </header>
 
         {rows.length === 0 ? (
@@ -128,8 +136,9 @@ export default async function MyApplicationsPage() {
                         {s.text}
                       </span>
                     </div>
-                    <div className="mt-3 text-xs text-slate-500">
-                      {formatDateTime(r.createdAt)}
+                    <div className="mt-3 flex items-center justify-between text-xs text-slate-500">
+                      <span>{formatDateTime(r.createdAt)}</span>
+                      <WithdrawButton applicationId={r.id} />
                     </div>
                   </Link>
                 );
@@ -171,12 +180,15 @@ export default async function MyApplicationsPage() {
                           </span>
                         </td>
                         <td className="px-4 py-3 text-right">
-                          <Link
-                            href={`/applied/${r.id}`}
-                            className="text-xs font-medium text-brand-600 hover:underline"
-                          >
-                            查看回执
-                          </Link>
+                          <div className="flex items-center justify-end gap-4">
+                            <WithdrawButton applicationId={r.id} />
+                            <Link
+                              href={`/applied/${r.id}`}
+                              className="text-xs font-medium text-brand-600 hover:underline"
+                            >
+                              查看回执
+                            </Link>
+                          </div>
                         </td>
                       </tr>
                     );

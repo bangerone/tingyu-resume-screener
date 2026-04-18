@@ -22,19 +22,22 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "请先登录" }, { status: 401 });
   }
 
-  // D6.5 演示限额：每账号投递数 >= 上限时拒绝
-  const cap = Number(process.env.DEMO_MAX_APPLICATIONS_PER_CANDIDATE ?? 0);
-  if (cap > 0) {
-    const [row] = await db
-      .select({ c: sql<number>`count(*)` })
-      .from(applications)
-      .where(eq(applications.candidateId, session.sub));
-    if (Number(row?.c ?? 0) >= cap) {
-      return NextResponse.json(
-        { error: `演示限额：每账号最多可投递 ${cap} 次` },
-        { status: 429 },
-      );
-    }
+  // 业务规则：每账号最多 2 个活跃投递；超出需先撤回已有的
+  // 演示环境若显式设了 DEMO_MAX_APPLICATIONS_PER_CANDIDATE，则取二者较小
+  const hardCap = 2;
+  const envCap = Number(process.env.DEMO_MAX_APPLICATIONS_PER_CANDIDATE ?? 0);
+  const cap = envCap > 0 ? Math.min(envCap, hardCap) : hardCap;
+  const [row] = await db
+    .select({ c: sql<number>`count(*)` })
+    .from(applications)
+    .where(eq(applications.candidateId, session.sub));
+  if (Number(row?.c ?? 0) >= cap) {
+    return NextResponse.json(
+      {
+        error: `每个账号最多同时保留 ${cap} 份投递；如需投递新岗位，请先在「我的投递」撤回一份。`,
+      },
+      { status: 429 },
+    );
   }
 
   let body: unknown;

@@ -7,11 +7,12 @@
 // ============================================================
 
 import { NextResponse, type NextRequest } from "next/server";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/lib/db/client";
 import { applications, jobs } from "@/lib/db/schema";
 import { isHrAuthenticated } from "@/lib/auth/hr";
+import { getCandidateSession } from "@/lib/auth/candidate";
 
 export const runtime = "nodejs";
 
@@ -72,5 +73,28 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
     .update(applications)
     .set({ status: parsed.data.status })
     .where(eq(applications.id, params.id));
+  return NextResponse.json({ ok: true });
+}
+
+/** 候选人撤回投递：直接删除自己名下的记录。 */
+export async function DELETE(_req: NextRequest, { params }: Ctx) {
+  const session = await getCandidateSession();
+  if (!session) {
+    return NextResponse.json({ error: "请先登录" }, { status: 401 });
+  }
+  const [existing] = await db
+    .select({ id: applications.id })
+    .from(applications)
+    .where(
+      and(
+        eq(applications.id, params.id),
+        eq(applications.candidateId, session.sub),
+      ),
+    )
+    .limit(1);
+  if (!existing) {
+    return NextResponse.json({ error: "投递不存在或无权限" }, { status: 404 });
+  }
+  await db.delete(applications).where(eq(applications.id, params.id));
   return NextResponse.json({ ok: true });
 }

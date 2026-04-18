@@ -24,6 +24,8 @@ export default async function JobsPage({
   const raw = pick(searchParams.tab) ?? "all";
   const tab: Tab =
     raw === "campus" ? "campus" : raw === "social" ? "social" : "all";
+  const selectedDept = pick(searchParams.dept);
+  const selectedLoc = pick(searchParams.loc);
 
   const all = await db
     .select()
@@ -37,18 +39,64 @@ export default async function JobsPage({
     campus: all.filter((j) => j.hiringType === "campus").length,
   };
 
-  const rows =
+  // 先按 tab 过滤
+  const tabRows =
     tab === "all"
       ? all
       : tab === "campus"
       ? all.filter((j) => j.hiringType === "campus")
       : all.filter((j) => j.hiringType !== "campus");
 
+  // dept / loc 选项来自当前 tab 的岗位，避免显示空选项
+  const deptOptions = Array.from(
+    new Set(tabRows.map((j) => j.department).filter((s) => !!s)),
+  ) as string[];
+  const locOptions = Array.from(
+    new Set(
+      tabRows.flatMap((j) =>
+        (j.location ?? "")
+          .split("/")
+          .map((s) => s.trim())
+          .filter(Boolean),
+      ),
+    ),
+  );
+
+  // 最终可见的岗位 = tab 过滤 ∩ dept 过滤 ∩ loc 过滤
+  let rows = tabRows;
+  if (selectedDept) rows = rows.filter((j) => j.department === selectedDept);
+  if (selectedLoc)
+    rows = rows.filter((j) =>
+      (j.location ?? "")
+        .split("/")
+        .map((s) => s.trim())
+        .includes(selectedLoc),
+    );
+
+  // 构造链接时保留其它筛选
+  function buildHref(o: {
+    tab?: Tab;
+    dept?: string | null;
+    loc?: string | null;
+  }) {
+    const qp = new URLSearchParams();
+    const t = o.tab !== undefined ? o.tab : tab;
+    if (t !== "all") qp.set("tab", t);
+    const d = o.dept !== undefined ? o.dept : selectedDept;
+    if (d) qp.set("dept", d);
+    const l = o.loc !== undefined ? o.loc : selectedLoc;
+    if (l) qp.set("loc", l);
+    const s = qp.toString();
+    return s ? `/jobs?${s}` : "/jobs";
+  }
+
   const tabs: { key: Tab; label: string; count: number }[] = [
     { key: "all", label: "全部", count: counts.all },
     { key: "social", label: "社会招聘", count: counts.social },
     { key: "campus", label: "校园招聘", count: counts.campus },
   ];
+
+  const hasFilter = !!selectedDept || !!selectedLoc;
 
   return (
     <div className="min-h-screen">
@@ -61,13 +109,11 @@ export default async function JobsPage({
           </p>
         </div>
 
-        <div className="mb-6 flex flex-wrap gap-2 border-b border-slate-200">
+        <div className="mb-4 flex flex-wrap gap-2 border-b border-slate-200">
           {tabs.map((t) => {
             const active = t.key === tab;
-            const href =
-              t.key === "all"
-                ? "/jobs"
-                : `/jobs?tab=${t.key}`;
+            // 切 tab 时把 dept / loc 重置（它们可能在另一个 tab 里不存在）
+            const href = buildHref({ tab: t.key, dept: null, loc: null });
             return (
               <Link
                 key={t.key}
@@ -95,12 +141,49 @@ export default async function JobsPage({
           })}
         </div>
 
+        {/* 筛选区 —— 当前 tab 有岗位时才显示 */}
+        {tabRows.length > 0 && (
+          <div className="mb-6 space-y-2">
+            {deptOptions.length > 0 && (
+              <FilterRow
+                label="部门"
+                selected={selectedDept}
+                options={deptOptions}
+                buildHref={(val) => buildHref({ dept: val })}
+              />
+            )}
+            {locOptions.length > 0 && (
+              <FilterRow
+                label="地点"
+                selected={selectedLoc}
+                options={locOptions}
+                buildHref={(val) => buildHref({ loc: val })}
+              />
+            )}
+            {hasFilter && (
+              <div className="pt-1 text-xs">
+                <Link
+                  href={buildHref({ dept: null, loc: null })}
+                  className="text-brand-600 hover:underline"
+                >
+                  清除筛选
+                </Link>
+                <span className="ml-2 text-slate-400">
+                  匹配 {rows.length} / {tabRows.length} 个岗位
+                </span>
+              </div>
+            )}
+          </div>
+        )}
+
         {rows.length === 0 ? (
           <EmptyState
             icon={<Briefcase className="h-5 w-5" />}
-            title="暂无岗位"
+            title="暂无匹配岗位"
             description={
-              tab === "campus"
+              hasFilter
+                ? "当前筛选条件下没有岗位，试试清除筛选或切换 tab？"
+                : tab === "campus"
                 ? "当前没有校园招聘岗位在招，试试看社会招聘？"
                 : tab === "social"
                 ? "当前没有社会招聘岗位在招，试试看校园招聘？"
@@ -115,6 +198,54 @@ export default async function JobsPage({
           </div>
         )}
       </main>
+    </div>
+  );
+}
+
+function FilterRow({
+  label,
+  selected,
+  options,
+  buildHref,
+}: {
+  label: string;
+  selected: string | undefined;
+  options: string[];
+  buildHref: (val: string | null) => string;
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <span className="shrink-0 text-xs font-medium text-slate-500">
+        {label}
+      </span>
+      <Link
+        href={buildHref(null)}
+        className={cn(
+          "rounded-full border px-3 py-1 text-xs transition",
+          !selected
+            ? "border-brand-500 bg-brand-50 text-brand-700"
+            : "border-slate-200 bg-white text-slate-600 hover:border-brand-300",
+        )}
+      >
+        全部
+      </Link>
+      {options.map((opt) => {
+        const active = opt === selected;
+        return (
+          <Link
+            key={opt}
+            href={buildHref(active ? null : opt)}
+            className={cn(
+              "rounded-full border px-3 py-1 text-xs transition",
+              active
+                ? "border-brand-500 bg-brand-50 text-brand-700"
+                : "border-slate-200 bg-white text-slate-600 hover:border-brand-300",
+            )}
+          >
+            {opt}
+          </Link>
+        );
+      })}
     </div>
   );
 }

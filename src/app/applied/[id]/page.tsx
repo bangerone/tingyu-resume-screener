@@ -7,6 +7,7 @@ import { getCandidateSession } from "@/lib/auth/candidate";
 import { CandidateNav } from "@/features/layout/candidate-nav";
 import { Button } from "@/components/ui/button";
 import { SuccessCheck } from "./_success-check";
+import { WithdrawButton } from "@/app/my-applications/withdraw-button";
 
 export const dynamic = "force-dynamic";
 
@@ -62,6 +63,9 @@ export default async function AppliedPage({
           <Link href="/jobs">
             <Button variant="outline">看看其他岗位</Button>
           </Link>
+        </div>
+        <div className="mt-6 animate-fade-up text-xs [animation-delay:600ms] opacity-0">
+          <WithdrawButton applicationId={row.id} />
         </div>
       </main>
     </div>
